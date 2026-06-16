@@ -183,7 +183,7 @@
 
 <script>
 /* 【可更動】設定您的 Google Sheet 發布連結 (CSV 格式) */
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaeOLMSqtncdw8BNX3g1ullp-ala-D1-qVhFPMPcKWH_M53UJwQaQ0R2OfZlwMIx9KEwOlHkIiZcHD/pub?gid=0&single=true&output=csv';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQfhA6XSng6bEqCCHseWHcBT9iLJ01OanUFlmjNpYIzkxm2rJvPlw3DFf7p10GM_Y7L7J68Z_JUZ1yM/pub?output=csv';
 /* 【可更動】設定導引按鈕的連結 */
 const CATALOG_URL   = 'https://chen-zi-yu.github.io/ITZY/';
 
@@ -449,6 +449,7 @@ function renderResults(rows) {
         <div class="item-row">
           <div class="item-number">${idx+1}</div>
           <div class="item-desc">${clean}</div>
+          <div class="item-status"><span class="status-dot ${badge.cls}">${badge.label}</span></div>
         </div>`;
     });
     html += `</div>`;
