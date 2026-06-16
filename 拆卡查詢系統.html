@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ ITZY 拆卡對帳查詢</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* 【可更動】全域變數區：在此修改配色方案 */
+  :root {
+    --rose: #f2a7c3; --rose-light: #fce8f1; --rose-mid: #e8799f; --rose-deep: #c45a7e;
+    --cream: #fdf6f9; --lavender: #e8e0f5; --lavender-mid: #b8a9d9;
+    --gold: #d4a853; --gold-light: #fdf3dc;
+    --text-dark: #2d1f2e; --text-mid: #6b4c60; --text-light: #a07a8e;
+    --border: rgba(242,167,195,0.3); --white: #ffffff;
+    --green: #5aab7a; --green-light: #eaf5ef;
+    --red-light: #fdeef3; --orange: #e08a3c; --orange-light: #fdf0e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+
+  /* 頁首樣式 */
+  header {
+    background: linear-gradient(135deg, #fce8f1 0%, #f0e8fa 50%, #fce8f1 100%);
+    border-bottom: 1px solid var(--border); padding: 2rem 1.5rem 1.5rem; text-align: center;
+  }
+  header::before {
+    content: '✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦';
+    display: block; font-size: 10px; letter-spacing: 6px; color: var(--rose-mid); margin-bottom: 1rem; opacity: 0.6;
+  }
+  .site-title { font-family:'Playfair Display',serif; font-size:clamp(1.5rem,4vw,2.2rem); color:var(--rose-deep); letter-spacing:2px; }
+  .site-sub { font-size:0.75rem; color:var(--text-light); margin-top:0.4rem; letter-spacing:4px; text-transform:uppercase; }
+
+  /* 【可更動】Banner 按鈕連結 */
+  .kpop-banner {
+    max-width:680px; margin:1.2rem auto 0;
+    background:linear-gradient(90deg,#f0e8fa,#fce8f1);
+    border:1px solid rgba(184,169,217,0.5); border-radius:50px;
+    padding:0.6rem 1.4rem; display:flex; align-items:center; justify-content:center;
+    gap:0.6rem; text-decoration:none; transition:box-shadow 0.2s,transform 0.2s;
+  }
+  .kpop-banner:hover { box-shadow:0 4px 18px rgba(184,169,217,0.4); transform:translateY(-2px); }
+  .kpop-banner .banner-text { font-size:0.82rem; color:var(--text-mid); font-weight:500; }
+
+  /* 搜尋列區域 */
+  .search-wrap { max-width:640px; margin:1.8rem auto 0; padding:0 1.5rem; }
+  .search-box {
+    display:flex; align-items:center; background:var(--white);
+    border:1.5px solid var(--rose); border-radius:50px; padding:0.6rem 1.2rem; gap:0.75rem;
+    box-shadow:0 4px 20px rgba(242,167,195,0.2); transition:box-shadow 0.2s;
+  }
+  .search-box:focus-within { box-shadow:0 4px 28px rgba(242,167,195,0.4); }
+  .search-icon { font-size:1.1rem; opacity:0.5; }
+  .search-box input { flex:1; border:none; outline:none; font-family:'Noto Sans TC',sans-serif; font-size:0.95rem; color:var(--text-dark); background:transparent; }
+  .search-box input::placeholder { color:var(--text-light); }
+  .clear-btn { background:none; border:none; cursor:pointer; color:var(--text-light); font-size:1rem; padding:2px 6px; border-radius:50%; transition:color 0.2s; display:none; }
+  .clear-btn:hover { color:var(--rose-deep); }
+
+  /* 搜尋建議選單 */
+  .suggestions { max-width:640px; margin:0 auto; padding:0 1.5rem; position:relative; }
+  .suggest-list {
+    position:absolute; top:4px; left:1.5rem; right:1.5rem;
+    background:var(--white); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; box-shadow:0 8px 24px rgba(196,90,126,0.12); z-index:100;
+  }
+  .suggest-item { padding:0.6rem 1.1rem; cursor:pointer; font-size:0.88rem; color:var(--text-dark); transition:background 0.15s; border-bottom:1px solid var(--rose-light); }
+  .suggest-item:last-child { border-bottom:none; }
+  .suggest-item:hover { background:var(--rose-light); }
+
+  /* 主內容區 */
+  .main { max-width:900px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+  .state-msg { text-align:center; padding:4rem 2rem; color:var(--text-light); }
+  .state-msg .big-icon { font-size:3rem; margin-bottom:1rem; }
+  .state-msg p { font-size:0.9rem; line-height:1.8; }
+
+  /* 顧客資訊面板 */
+  .customer-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+  .avatar {
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,var(--rose),var(--lavender-mid));
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem; color:white; font-weight:700; flex-shrink:0;
+  }
+  .customer-name { font-size:1.2rem; font-weight:700; color:var(--text-dark); }
+  .customer-tag { font-size:0.75rem; color:var(--text-light); margin-top:3px; }
+  .pay-badge { display:inline-block; font-size:0.72rem; padding:2px 10px; border-radius:20px; font-weight:500; margin-top:4px; }
+  .pay-匯款 { background:var(--gold-light); color:var(--gold); border:1px solid rgba(212,168,83,0.3); }
+  .pay-貨付 { background:var(--green-light); color:var(--green); border:1px solid rgba(90,171,122,0.3); }
+  .pay-無卡 { background:var(--lavender); color:var(--lavender-mid); border:1px solid rgba(184,169,217,0.5); }
+  .pay-尚未付款 { background:var(--red-light); color:var(--rose-deep); border:1px solid rgba(196,90,126,0.3); }
+
+  /* 金額統計卡片 */
+  .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem; margin-bottom:2rem; }
+  .summary-card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; text-align:center; }
+  .summary-card .label { font-size:0.7rem; color:var(--text-light); letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem; }
+  .summary-card .value { font-size:1.25rem; font-weight:700; color:var(--text-dark); }
+  .summary-card.paid .value { color:var(--green); }
+  .summary-card.unpaid .value { color:var(--rose-deep); }
+
+  /* 明細列表樣式 */
+  .section-title { font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--text-light); margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .items-list { display:flex; flex-direction:column; gap:0.75rem; }
+  .item-row {
+    background:var(--white); border:1px solid var(--border); border-radius:14px;
+    padding:1rem 1.2rem; display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+  }
+  .item-number {
+    width:24px; height:24px; border-radius:50%; background:var(--rose-light); color:var(--rose-deep);
+    font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
+  }
+  .item-desc { flex:1; font-size:0.88rem; color:var(--text-dark); line-height:1.6; }
+  .item-status { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+  .status-dot { font-size:0.7rem; padding:2px 9px; border-radius:20px; font-weight:500; white-space:nowrap; }
+  .dot-paid { background:var(--green-light); color:var(--green); }
+  .dot-unpaid { background:var(--red-light); color:var(--rose-deep); }
+  .dot-pending { background:var(--orange-light); color:var(--orange); }
+
+  /* 底部導引區 */
+  .catalog-section {
+    margin-top:2rem; background:linear-gradient(135deg,#f0e8fa,#fce8f1);
+    border:1px solid rgba(184,169,217,0.4); border-radius:16px;
+    padding:1.2rem 1.4rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  }
+  .catalog-info .catalog-label { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--lavender-mid); margin-bottom:0.3rem; }
+  .catalog-info .catalog-title { font-size:1rem; font-weight:600; color:var(--text-mid); }
+  .catalog-info .catalog-sub { font-size:0.78rem; color:var(--text-light); margin-top:2px; }
+  .catalog-btn {
+    background:var(--white); border:1px solid rgba(184,169,217,0.5); color:var(--text-mid);
+    font-family:'Noto Sans TC',sans-serif; font-size:0.82rem; font-weight:500;
+    padding:0.5rem 1.1rem; border-radius:50px; cursor:pointer; text-decoration:none; white-space:nowrap;
+    transition:box-shadow 0.2s,transform 0.2s; display:inline-block;
+  }
+  .catalog-btn:hover { box-shadow:0 4px 14px rgba(184,169,217,0.35); transform:translateY(-1px); }
+
+  .remark-box { margin-top:0.75rem; background:var(--gold-light); border:1px solid rgba(212,168,83,0.25); border-radius:10px; padding:0.6rem 1rem; font-size:0.8rem; color:var(--text-mid); line-height:1.6; }
+  .remark-label { font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:3px; }
+
+  /* 診斷面板樣式 */
+  .debug-panel {
+    background:#1a1a2e; color:#a0c4ff; font-family:monospace; font-size:0.72rem;
+    border-radius:12px; padding:1rem; margin-bottom:1.5rem; max-height:200px; overflow-y:auto; line-height:1.8;
+  }
+  .debug-panel .d-label { color:#ff9de2; font-weight:bold; }
+  .debug-toggle { background:none; border:1px solid var(--border); color:var(--text-light); font-size:0.72rem; padding:3px 10px; border-radius:20px; cursor:pointer; margin-bottom:0.5rem; }
+
+  /* 載入與結果提示 */
+  .loading { text-align:center; padding:3rem; color:var(--text-light); }
+  .loading-dots span { display:inline-block; width:8px; height:8px; background:var(--rose); border-radius:50%; margin:0 3px; animation:bounce 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay:0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-8px);opacity:1} }
+  .no-result { text-align:center; padding:3rem 1rem; color:var(--text-light); font-size:0.9rem; }
+
+  footer { text-align:center; padding:1.5rem; font-size:0.72rem; color:var(--text-light); letter-spacing:2px; border-top:1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="site-title">✦ ITZY 拆卡對帳查詢</div>
+  <div class="site-sub">MOTTO × 簽售拆卡</div>
+  <a class="kpop-banner" href="https://chen-zi-yu.github.io/ITZY/" target="_blank" rel="noopener">
+    <span>📸</span>
+    <span class="banner-text">前往 ITZY 小卡圖鑑，查看所有小卡照片 →</span>
+  </a>
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="輸入拆卡者名稱搜尋…" autocomplete="off" />
+      <button class="clear-btn" id="clearBtn" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+</header>
+
+<div class="suggestions"><div class="suggest-list" id="suggestList" style="display:none"></div></div>
+
+<div class="main" id="mainContent">
+  <div class="loading"><div class="loading-dots"><span></span><span></span><span></span></div><p style="margin-top:1rem;font-size:0.85rem">載入中…</p></div>
+</div>
+
+<footer>✦ &nbsp; ITZY MIDZY 날자 &nbsp; ✦</footer>
+
+<script>
+/* 【可更動】設定您的 Google Sheet 發布連結 (CSV 格式) */
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaeOLMSqtncdw8BNX3g1ullp-ala-D1-qVhFPMPcKWH_M53UJwQaQ0R2OfZlwMIx9KEwOlHkIiZcHD/pub?gid=0&single=true&output=csv';
+/* 【可更動】設定導引按鈕的連結 */
+const CATALOG_URL   = 'https://chen-zi-yu.github.io/ITZY/';
+
+let allData   = [];
+let headers   = [];
+let rawLines  = [];
+let debugInfo = [];
+let searchTimeout = null;
+
+// ── 核心邏輯：字串正規化處理 ──
+function normalize(s) {
+  return (s||'').replace(/[\s\u3000\ufeff]/g,'').toLowerCase();
+}
+// ── 核心邏輯：欄位名稱比對 ──
+function findCol(hdrs, ...keywords) {
+  for (const k of keywords) {
+    const kn = normalize(k);
+    const idx = hdrs.findIndex(h => normalize(h).includes(kn));
+    if (idx !== -1) return hdrs[idx];
+  }
+  return null;
+}
+
+// ── 核心邏輯：CSV 字串轉陣列解析器 ──
+function parseCSVFull(text) {
+  const cleaned = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const rows = [];
+  let row = [], cell = '', inQ = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (c === '"') {
+      if (inQ && cleaned[i+1] === '"') { cell += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(cell); cell = '';
+    } else if (c === '\n' && !inQ) {
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else {
+      cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+// ── 核心邏輯：金額處理 ──
+function parseMoney(str) {
+  if (!str) return 0;
+  return parseInt(String(str).replace(/[^0-9]/g,'')) || 0;
+}
+
+// ── 核心邏輯：從 Google Sheet 抓取與載入資料 ──
+async function loadSheet() {
+  try {
+    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(SHEET_CSV_URL));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    rawLines = text.split('\n');
+
+    const allRows = parseCSVFull(text);
+    debugInfo.push(`共解析到 ${allRows.length} 列`);
+
+    let headerRowIdx = -1;
+    for (let i = 0; i < allRows.length; i++) {
+      const joined = allRows[i].join(',');
+      if (normalize(joined).includes('拆卡者') || normalize(joined).includes('拆卡')) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) {
+      debugInfo.push('⚠ 找不到標題列！前5列內容：');
+      allRows.slice(0,5).forEach((r,i) => debugInfo.push(`列${i+1}: ${r.slice(0,4).join(' | ')}`));
+      allData = [];
+      showInitState(true);
+      return;
+    }
+
+    headers = allRows[headerRowIdx].map(h => h.trim());
+    debugInfo.push(`標題列在第 ${headerRowIdx+1} 列`);
+    debugInfo.push(`欄位：${headers.filter(h=>h).join(' | ')}`);
+
+    allData = [];
+    for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+      const cells = allRows[i];
+      const nameColIdx = headers.findIndex(h => normalize(h).includes('拆卡者') || normalize(h).includes('拆卡'));
+      const nameVal = nameColIdx >= 0 ? (cells[nameColIdx]||'').trim() : '';
+      if (!nameVal) continue; 
+
+      const obj = {};
+      headers.forEach((h, j) => { obj[h] = (cells[j] || '').trim(); });
+      allData.push(obj);
+    }
+
+    debugInfo.push(`有效資料 ${allData.length} 筆`);
+    showInitState(false);
+  } catch(e) {
+    debugInfo.push('❌ 讀取失敗：' + e.message);
+    allData = DEMO_DATA;
+    headers = Object.keys(DEMO_DATA[0]);
+    showInitState(true);
+  }
+}
+
+// ── 頁面狀態顯示器 ──
+function showInitState(showDebug) {
+  let dbg = '';
+  if (showDebug || allData.length === 0) {
+    dbg = `
+      <button class="debug-toggle" onclick="toggleDebug()">🔧 顯示診斷資訊</button>
+      <div class="debug-panel" id="debugPanel" style="display:none">
+        <div class="d-label">── 診斷資訊 ──</div>
+        ${debugInfo.map(l=>`<div>${l}</div>`).join('')}
+        <div class="d-label" style="margin-top:0.5rem">── 試算表前5列原始內容 ──</div>
+        ${rawLines.slice(0,5).map((l,i)=>`<div>列${i+1}: ${l.slice(0,80)}</div>`).join('')}
+      </div>`;
+  }
+  document.getElementById('mainContent').innerHTML = `
+    <div class="state-msg">
+      ${dbg}
+      <div class="big-icon">🌸</div>
+      <p>在上方輸入名稱搜尋<br>即可查看拆卡明細與對帳金額</p>
+    </div>`;
+}
+
+function toggleDebug() {
+  const p = document.getElementById('debugPanel');
+  const btn = document.querySelector('.debug-toggle');
+  if (p.style.display==='none') { p.style.display='block'; btn.textContent='🔧 隱藏診斷資訊'; }
+  else { p.style.display='none'; btn.textContent='🔧 顯示診斷資訊'; }
+}
+
+function getVal(row, ...keywords) {
+  const col = findCol(Object.keys(row), ...keywords);
+  return col ? (row[col] || '') : '';
+}
+
+// ── 搜尋機制 ──
+function getMatches(query) {
+  const q = normalize(query);
+  if (!q) return [];
+  return allData.filter(r => {
+    const name = normalize(getVal(r, '拆卡者', '拆卡', '名稱', 'name'));
+    return name.includes(q);
+  });
+}
+
+function showSuggestions(query) {
+  const list = document.getElementById('suggestList');
+  const matches = getMatches(query);
+  const names = [...new Set(matches.map(r => getVal(r,'拆卡者','拆卡','名稱','name')))];
+  if (!names.length || (names.length===1 && normalize(names[0])===normalize(query))) {
+    list.style.display='none'; return;
+  }
+  list.innerHTML = names.slice(0,8).map(n =>
+    `<div class="suggest-item" onclick="selectName(this.dataset.name)" data-name="${n.replace(/"/g,'&quot;')}">🌸 ${n}</div>`
+  ).join('');
+  list.style.display='block';
+}
+
+function selectName(name) {
+  document.getElementById('searchInput').value = name;
+  document.getElementById('suggestList').style.display='none';
+  document.getElementById('clearBtn').style.display='block';
+  renderResults(getMatches(name));
+}
+
+function search(query) {
+  const q = query.trim();
+  document.getElementById('clearBtn').style.display = q ? 'block' : 'none';
+  if (!q) {
+    document.getElementById('suggestList').style.display='none';
+    showInitState(false);
+    return;
+  }
+  showSuggestions(q);
+  renderResults(getMatches(q));
+}
+
+// ── 付款標籤樣式輔助函式 ──
+function payClass(way) {
+  if (!way) return '';
+  if (way.includes('匯款')) return 'pay-匯款';
+  if (way.includes('貨')) return 'pay-貨付';
+  if (way.includes('無卡')) return 'pay-無卡';
+  if (way.includes('尚未')) return 'pay-尚未付款';
+  return '';
+}
+function payLabel(way) {
+  if (!way) return '';
+  if (way.includes('匯款')) return '💳 匯款';
+  if (way.includes('貨')) return '📦 貨到付款';
+  if (way.includes('無卡')) return '📱 無卡支付';
+  if (way.includes('尚未')) return '⏳ 尚未付款';
+  return way;
+}
+
+function itemStatusBadge(row) {
+  const way = getVal(row,'付款方式','付款');
+  const unpaid = parseMoney(getVal(row,'尚未付款','未付款','未付'));
+  if (way.includes('尚未')) return {cls:'dot-pending', label:'⏳ 待付款'};
+  if (way.includes('貨')) return {cls:'dot-pending', label:'📦 到貨付'};
+  if (unpaid === 0) return {cls:'dot-paid', label:'✓ 已結清'};
+  return {cls:'dot-unpaid', label:`⚠ 欠 NT$${unpaid.toLocaleString()}`};
+}
+
+// ── 渲染 UI 顯示搜尋結果 ──
+function renderResults(rows) {
+  if (!rows.length) {
+    document.getElementById('mainContent').innerHTML =
+      `<div class="no-result">找不到此名稱的拆卡紀錄 🌸<br><span style="font-size:0.8rem">請確認名稱是否正確，或嘗試輸入部分名稱</span></div>`;
+    return;
+  }
+
+  const row = rows[0];
+  const name    = getVal(row,'拆卡者','拆卡','名稱');
+  const payWay  = getVal(row,'付款方式','付款');
+  const total   = parseMoney(getVal(row,'總金額','金額'));
+  const paid    = parseMoney(getVal(row,'已經付款','已付款','已付'));
+  const unpaid  = parseMoney(getVal(row,'尚未付款','未付款','未付'));
+  const status  = getVal(row,'貨品狀態','狀態');
+  const note    = getVal(row,'備註','note','remark');
+  const rawItems= getVal(row,'卡面','成員','商品','品項','明細');
+
+  const itemLines = rawItems.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  const initial = (name.charAt(0)||'?').toUpperCase();
+  const badge = itemStatusBadge(row);
+
+  let html = `
+    <div class="customer-header">
+      <div class="avatar">${initial}</div>
+      <div>
+        <div class="customer-name">${name}</div>
+        ${status ? `<div class="customer-tag">${status}</div>` : ''}
+        ${payWay ? `<span class="pay-badge ${payClass(payWay)}">${payLabel(payWay)}</span>` : ''}
+      </div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="label">購買總金額</div>
+        <div class="value">NT$${total.toLocaleString()}</div>
+      </div>
+      <div class="summary-card paid">
+        <div class="label">已付款</div>
+        <div class="value">NT$${paid.toLocaleString()}</div>
+      </div>
+      <div class="summary-card unpaid">
+        <div class="label">尚未付款</div>
+        <div class="value">NT$${unpaid.toLocaleString()}</div>
+      </div>
+    </div>`;
+
+  if (itemLines.length) {
+    html += `<div class="section-title">拆卡品項明細</div><div class="items-list">`;
+    itemLines.forEach((line, idx) => {
+      const clean = line.replace(/^\s*\d+[.\uff0e]\s*/,'').trim();
+      if (!clean) return;
+      html += `
+        <div class="item-row">
+          <div class="item-number">${idx+1}</div>
+          <div class="item-desc">${clean}</div>
+          <div class="item-status"><span class="status-dot ${badge.cls}">${badge.label}</span></div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (note) {
+    html += `<div class="remark-box"><div class="remark-label">備註</div>${note}</div>`;
+  }
+
+  html += `
+    <div class="catalog-section">
+      <div class="catalog-info">
+        <div class="catalog-label">小卡圖鑑</div>
+        <div class="catalog-title">ITZY 專輯與周邊紀錄庫</div>
+        <div class="catalog-sub">點擊查看你的小卡完整圖鑑</div>
+      </div>
+      <a class="catalog-btn" href="${CATALOG_URL}" target="_blank" rel="noopener">前往圖鑑 →</a>
+    </div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ── 事件監聽處理 ──
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => search(this.value), 250);
+});
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { document.getElementById('suggestList').style.display='none'; search(this.value); }
+});
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-box') && !e.target.closest('.suggest-list'))
+    document.getElementById('suggestList').style.display='none';
+});
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').style.display='none';
+  document.getElementById('suggestList').style.display='none';
+  search('');
+}
+
+// ── 測試用資料 (若 Sheet 無法讀取會顯示此範例) ──
+const DEMO_DATA = [
+  {'拆卡者':'Han Han','卡面/成員':'1. MS1.0 線上食譜留娜 匯款\n2. kms3留卡 + 一單封 匯款\n3. ms末場 留哈利波特+粒留DM 貨付','付款方式':'匯款','總金額':'NT$1,165','已經付款金額':'NT$540','尚未付款金額':'NT$625','貨品狀態':'貨尚未抵達','備註':''},
+  {'拆卡者':'李雨潔','卡面/成員':'1. MP1.0 粒留牙痛\n2. BDM 粒留貓爪+粒留比耶\n3. kms3.0 志粒留娜卡+單封','付款方式':'無卡','總金額':'NT$10,050','已經付款金額':'NT$10,000','尚未付款金額':'NT$50','貨品狀態':'貨尚未抵達','備註':''},
+];
+
+// 頁面載入時執行
+loadSheet();
+</script>
+</body>
+</html>
