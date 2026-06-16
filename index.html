@@ -100,21 +100,30 @@
   /* 明細列表樣式 */
   .section-title { font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--text-light); margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem; }
   .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
-  .items-list { display:flex; flex-direction:column; gap:0.75rem; }
+  .items-list { display:flex; flex-direction:column; gap:0.6rem; }
   .item-row {
-    background:var(--white); border:1px solid var(--border); border-radius:14px;
-    padding:1rem 1.2rem; display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+    background:var(--white); border:1px solid var(--border); border-radius:18px;
+    padding:0.9rem 1.2rem; display:flex; align-items:flex-start; gap:1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: default;
+  }
+  .item-row:hover {
+    transform: translateX(6px);
+    box-shadow: 0 4px 18px rgba(242,167,195,0.18);
+    background: var(--rose-light);
+  }
+  .items-list > .item-row:nth-child(even) {
+    background: #fdf1f7;
+  }
+  .items-list > .item-row:nth-child(even):hover {
+    background: var(--rose-light);
   }
   .item-number {
-    width:24px; height:24px; border-radius:50%; background:var(--rose-light); color:var(--rose-deep);
-    font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
+    font-size:1.1rem; flex-shrink:0; margin-top:1px; line-height:1;
+    user-select:none;
   }
   .item-desc { flex:1; font-size:0.88rem; color:var(--text-dark); line-height:1.6; }
-  .item-status { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
-  .status-dot { font-size:0.7rem; padding:2px 9px; border-radius:20px; font-weight:500; white-space:nowrap; }
-  .dot-paid { background:var(--green-light); color:var(--green); }
-  .dot-unpaid { background:var(--red-light); color:var(--rose-deep); }
-  .dot-pending { background:var(--orange-light); color:var(--orange); }
+  .item-confirm { font-size:0.7rem; color:var(--text-light); margin-top:3px; letter-spacing:0.5px; }
 
   /* 底部導引區 */
   .catalog-section {
@@ -442,14 +451,16 @@ function renderResults(rows) {
 
   if (itemLines.length) {
     html += `<div class="section-title">拆卡品項明細</div><div class="items-list">`;
-    itemLines.forEach((line, idx) => {
+    itemLines.forEach((line) => {
       const clean = line.replace(/^\s*\d+[.\uff0e]\s*/,'').trim();
       if (!clean) return;
       html += `
         <div class="item-row">
-          <div class="item-number">${idx+1}</div>
-          <div class="item-desc">${clean}</div>
-          <div class="item-status"><span class="status-dot ${badge.cls}">${badge.label}</span></div>
+          <div class="item-number">✨</div>
+          <div class="item-desc">
+            ${clean}
+            <div class="item-confirm">已登記確認</div>
+          </div>
         </div>`;
     });
     html += `</div>`;
