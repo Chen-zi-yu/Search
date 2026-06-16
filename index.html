@@ -102,21 +102,27 @@
   .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
   .items-list { display:flex; flex-direction:column; gap:0.6rem; }
   .item-row {
-    background:var(--white); border:1px solid var(--border); border-radius:18px;
-    padding:0.9rem 1.2rem; display:flex; align-items:flex-start; gap:1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    background: var(--white); 
+    border: 1px solid var(--border); 
+    border-radius: 18px;
+    padding: 0.9rem 1.2rem; 
+    display: flex; 
+    align-items: flex-start; 
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: default;
   }
+
+  /* 移除 hover 時的特殊背景色 */
   .item-row:hover {
     transform: translateX(6px);
     box-shadow: 0 4px 18px rgba(242,167,195,0.18);
-    background: var(--rose-light);
+    background: var(--white); 
   }
+
+  /* 移除偶數行的特殊背景色 */
   .items-list > .item-row:nth-child(even) {
-    background: #fdf1f7;
-  }
-  .items-list > .item-row:nth-child(even):hover {
-    background: var(--rose-light);
+    background: var(--white);
   }
   .item-number {
     font-size:1.1rem; flex-shrink:0; margin-top:1px; line-height:1;
