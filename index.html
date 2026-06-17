@@ -319,11 +319,13 @@ const CATALOG_URL   = 'https://chen-zi-yu.github.io/ITZY/';
      3. 同樣方式找出「稱呼/姓名」題目的 entry 編號，填入 FEEDBACK_FIELD_NAME。
         如果表單沒有姓名欄位，可以保持空字串 '' 不填。
      4. 把下面的 FEEDBACK_ENABLED 改成 true，即可正式啟用送出功能。
+	以新增表單
    ==================================================================== */
-const FEEDBACK_ENABLED          = false;   // 【可更動】串接好表單後，把這裡改成 true
-const FEEDBACK_FORM_ACTION_URL  = '';      // 【可更動】填入 Google 表單的 formResponse 網址
-const FEEDBACK_FIELD_MESSAGE    = '';      // 【可更動】填入「意見內容」欄位的 entry 編號，例如 'entry.111111'
-const FEEDBACK_FIELD_NAME       = '';      // 【可更動】填入「稱呼/姓名」欄位的 entry 編號（沒有此欄位可留空）
+
+const FEEDBACK_ENABLED          = true;   // 【可更動】串接好表單後，把這裡改成 true
+const FEEDBACK_FORM_ACTION_URL  = 'https://docs.google.com/forms/d/e/1FAIpQLSeZBxBAUXKRYSAmjKhPuH7_4Hek7_OOT5K-wqblJ14y6t_czw/viewform?usp=dialog';      // 【可更動】填入 Google 表單的 formResponse 網址
+const FEEDBACK_FIELD_MESSAGE    = '187493456';      // 【可更動】填入「意見內容」欄位的 entry 編號，例如 'entry.111111'
+const FEEDBACK_FIELD_NAME       = '1475059438';      // 【可更動】填入「稱呼/姓名」欄位的 entry 編號（沒有此欄位可留空）
 
 /* ====================================================================
    【拆卡明細 → 圖鑑(gallery.html)連結】設定
