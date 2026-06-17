@@ -149,7 +149,7 @@
   .pay-匯款 { background:var(--gold-light); color:var(--gold); border:1px solid rgba(212,168,83,0.3); }
   .pay-貨付 { background:var(--green-light); color:var(--green); border:1px solid rgba(90,171,122,0.3); }
   .pay-無卡 { background:var(--lavender); color:var(--lavender-mid); border:1px solid rgba(184,169,217,0.5); }
-  .pay-尚未付款 { background:var(--red-light); color:var(--rose-deep); border:1px solid rgba(196,90,126,0.3); }
+  .pay-尚有未付款 { background:var(--red-light); color:var(--rose-deep); border:1px solid rgba(196,90,126,0.3); }
 
   /* 金額統計卡片 */
   .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.75rem; margin-bottom:2rem; }
@@ -356,8 +356,8 @@ const FEEDBACK_FIELD_NAME       = '';      // 【可更動】填入「稱呼/姓
      例如想改成導向 GOLD 專輯相簿，就改成：
        'gallery.html?id=gold&album=gold'
    ==================================================================== */
-const GALLERY_PAGE_URL     = 'gallery.html'; // 【可更動】若 gallery.html 路徑不同，改這裡
-const GALLERY_FALLBACK_URL = 'gallery.html?id=motto&album=offline'; // 【可更動】比對不到時的預設相簿連結
+const GALLERY_PAGE_URL     = '../ITZY/gallery.html'; // 【可更動】若 gallery.html 路徑不同，改這裡
+const GALLERY_FALLBACK_URL = '../ITZY/gallery.html?id=motto&album=offline'; // 【可更動】比對不到時的預設相簿連結
 
 const GALLERY_LINK_RULES = [
   // ── Motto 系列：線下簽售 / 線上抽選相關關鍵字 ──
