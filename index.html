@@ -794,13 +794,28 @@ function selectName(name) {
 function search(query) {
   const q = query.trim();
   document.getElementById('clearBtn').style.display = q ? 'block' : 'none';
+  
   if (!q) {
     document.getElementById('suggestList').style.display='none';
     showInitState(false);
     return;
   }
-  showSuggestions(q);
-  renderResults(getMatches(q));
+
+  const matches = getMatches(q);
+  // 檢查是否完全匹配到某一個人的名字
+  const exactMatch = matches.find(r => 
+    normalize(getVal(r, '拆卡者', '拆卡', '名稱', 'name')) === normalize(q)
+  );
+
+  if (exactMatch) {
+    // 只有在完全匹配時才顯示資料
+    document.getElementById('suggestList').style.display='none';
+    renderResults([exactMatch]); 
+  } else {
+    // 若未完全匹配，則顯示建議清單，並清空主內容區
+    showSuggestions(q);
+    showInitState(false); 
+  }
 }
 
 // ── 付款標籤樣式輔助函式 ──
