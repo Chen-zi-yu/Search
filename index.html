@@ -299,9 +299,6 @@
 </div>
 
 <script>
-
-let selectedIndex = -1; // -1 代表沒有選取任何項目
-
 /* 【可更動】設定您的 Google Sheet 發布連結 (CSV 格式) */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaeOLMSqtncdw8BNX3g1ullp-ala-D1-qVhFPMPcKWH_M53UJwQaQ0R2OfZlwMIx9KEwOlHkIiZcHD/pub?gid=0&single=true&output=csv';
 /* 【可更動】設定導引按鈕的連結 */
@@ -778,18 +775,13 @@ function showSuggestions(query) {
   const list = document.getElementById('suggestList');
   const matches = getMatches(query);
   const names = [...new Set(matches.map(r => getVal(r,'拆卡者','拆卡','名稱','name')))];
-  
-  if (!names.length || (names.length === 1 && normalize(names[0]) === normalize(query))) {
-    list.style.display = 'none';
-    selectedIndex = -1;
-    return;
+  if (!names.length || (names.length===1 && normalize(names[0])===normalize(query))) {
+    list.style.display='none'; return;
   }
-
-  selectedIndex = -1; // 每次搜尋重新更新建議時，重置選取索引
-  list.innerHTML = names.slice(0,8).map((n, i) =>
-    `<div class="suggest-item" onclick="selectName(this.dataset.name)" data-index="${i}" data-name="${n.replace(/"/g,'&quot;')}">🌸 ${n}</div>`
+  list.innerHTML = names.slice(0,8).map(n =>
+    `<div class="suggest-item" onclick="selectName(this.dataset.name)" data-name="${n.replace(/"/g,'&quot;')}">🌸 ${n}</div>`
   ).join('');
-  list.style.display = 'block';
+  list.style.display='block';
 }
 
 function selectName(name) {
@@ -937,70 +929,22 @@ function renderResults(rows) {
   document.getElementById('mainContent').innerHTML = html;
 }
 
-// ── 事件監聽處理 (已整合鍵盤選單控制) ──
-let selectedIndex = -1; 
-
+// ── 事件監聽處理 ──
 document.getElementById('searchInput').addEventListener('input', function() {
   clearTimeout(searchTimeout);
-  selectedIndex = -1; // 輸入新字時重置選單選取狀態
   searchTimeout = setTimeout(() => search(this.value), 250);
 });
-
 document.getElementById('searchInput').addEventListener('keydown', function(e) {
-  const list = document.getElementById('suggestList');
-  if (list.style.display === 'none') {
-    if (e.key === 'Enter') { search(this.value); }
-    return;
-  }
-
-  const items = list.querySelectorAll('.suggest-item');
-  
-  if (e.key === 'ArrowDown') { // 下鍵
-    e.preventDefault();
-    if (selectedIndex < items.length - 1) {
-      selectedIndex++;
-      updateSelection(items);
-    }
-  } else if (e.key === 'ArrowUp') { // 上鍵
-    e.preventDefault();
-    if (selectedIndex > 0) {
-      selectedIndex--;
-      updateSelection(items);
-    }
-  } else if (e.key === 'Enter') { // Enter 確定
-    if (selectedIndex !== -1) {
-      e.preventDefault();
-      selectName(items[selectedIndex].dataset.name);
-    } else {
-      search(this.value);
-    }
-  }
+  if (e.key === 'Enter') { document.getElementById('suggestList').style.display='none'; search(this.value); }
 });
-
-// 更新選單視覺樣式的輔助函式
-function updateSelection(items) {
-  items.forEach((item, i) => {
-    if (i === selectedIndex) {
-      item.style.background = '#fce8f1'; // 選取時背景色
-      item.scrollIntoView({ block: 'nearest' });
-    } else {
-      item.style.background = '';
-    }
-  });
-}
-
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.search-box') && !e.target.closest('.suggest-list')) {
+  if (!e.target.closest('.search-box') && !e.target.closest('.suggest-list'))
     document.getElementById('suggestList').style.display='none';
-    selectedIndex = -1;
-  }
 });
-
 function clearSearch() {
   document.getElementById('searchInput').value = '';
   document.getElementById('clearBtn').style.display='none';
   document.getElementById('suggestList').style.display='none';
-  selectedIndex = -1;
   search('');
 }
 
