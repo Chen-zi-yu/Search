@@ -355,7 +355,38 @@ const FEEDBACK_FIELD_NAME       = '';      // 【可更動】填入「稱呼/姓
      修改下面 GALLERY_FALLBACK_URL 的 id 與 album 參數即可，
      例如想改成導向 GOLD 專輯相簿，就改成：
        'gallery.html?id=gold&album=gold'
+
+   ====================================================================
+   【從 gallery 返回本頁】設定
+   index.html（本頁，位於 Search 資料夾）與 gallery.html（位於 ITZY
+   資料夾）是同層級的兩個資料夾，因此「返回」並非瀏覽器上一頁，而是
+   要明確指定一個網址。
+
+   做法：點擊拆卡品項連到 gallery.html 時，會在網址後面自動加上一個
+   標記參數 from=search，gallery.html 偵測到這個參數時，才會顯示一個
+   「⬅️ 返回拆卡查詢」的按鈕，並連回下面 SEARCH_PAGE_URL 指定的網址。
+   如果有人是直接打開 gallery.html（沒有經過本頁點擊），網址不會帶這個
+   參數，gallery.html 就不會出現這個返回按鈕——這樣就符合「從 index 去
+   gallery 可以再回來，但直接從 gallery 出發不能跳到 index」的需求。
+
+   ▶ 如何調整：
+     - SEARCH_PAGE_URL：填入本頁（index.html）實際發布後的完整網址。
+       若這支程式碼之後搬到別的網域或路徑，記得同步更新這裡。
+     - 如果以後想拿掉這個「返回」功能，只要把下面 ENABLE_BACK_TO_SEARCH
+       改成 false 即可（gallery.html 完全不用動，因為判斷邏輯都在它
+       接收到的網址參數上）。
    ==================================================================== */
+const ENABLE_BACK_TO_SEARCH = true;  // 【可更動】是否在連去 gallery 時帶上「可返回」標記
+const SEARCH_PAGE_URL = 'https://chen-zi-yu.github.io/Search/index.html'; // 【可更動】填入本頁(index.html)實際的完整網址
+const BACK_PARAM_KEY  = 'from';      // 【可更動】來源標記的參數名稱
+const BACK_PARAM_VAL  = 'search';    // 【可更動】來源標記的參數值，需與 gallery.html 中判斷的值一致
+
+// 幫 gallery 連結網址加上「可返回」標記與返回目標網址
+function withBackToSearchParam(url) {
+  if (!ENABLE_BACK_TO_SEARCH) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${BACK_PARAM_KEY}=${encodeURIComponent(BACK_PARAM_VAL)}&back=${encodeURIComponent(SEARCH_PAGE_URL)}`;
+}
 const GALLERY_PAGE_URL     = 'https://chen-zi-yu.github.io/ITZY/gallery.html'; // 【可更動】若 gallery.html 路徑不同，改這裡
 const GALLERY_FALLBACK_URL = 'https://chen-zi-yu.github.io/ITZY/gallery.html?id=motto&album=offline'; // 【可更動】比對不到時的預設相簿連結
 
@@ -382,11 +413,12 @@ function getGalleryLinkForItem(itemText) {
   for (const rule of GALLERY_LINK_RULES) {
     const hit = rule.keywords.some(k => target.includes(normalizeForMatch(k)));
     if (hit) {
-      return `${GALLERY_PAGE_URL}?id=${encodeURIComponent(rule.id)}&album=${encodeURIComponent(rule.album)}`;
+      const url = `${GALLERY_PAGE_URL}?id=${encodeURIComponent(rule.id)}&album=${encodeURIComponent(rule.album)}`;
+      return withBackToSearchParam(url);
     }
   }
   // 比對不到任何關鍵字時，導向預設相簿（而非完全空白的 gallery.html）
-  return GALLERY_FALLBACK_URL;
+  return withBackToSearchParam(GALLERY_FALLBACK_URL);
 }
 
 function openFeedback() {
