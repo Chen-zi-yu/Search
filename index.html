@@ -437,7 +437,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeFeedback();
 });
 
-async function submitFeedback() {
+function submitFeedback() {
   const msg = document.getElementById('fbMessage').value.trim();
   const name = document.getElementById('fbName').value.trim();
   const statusEl = document.getElementById('fbStatus');
@@ -448,7 +448,6 @@ async function submitFeedback() {
     return;
   }
 
-  // ── 尚未啟用串接時的「佔位」行為：僅顯示提示、印在 Console，方便測試畫面 ──
   if (!FEEDBACK_ENABLED || !FEEDBACK_FORM_ACTION_URL) {
     console.log('[意見回饋- 佔位測試]', { name, msg });
     statusEl.textContent = '（測試模式）尚未連接表單，內容已印在瀏覽器 Console。';
@@ -456,29 +455,38 @@ async function submitFeedback() {
     return;
   }
 
-  // ── 已啟用串接後，正式送往 Google 表單 ──
-  try {
-    const formData = new FormData();
-    formData.append(FEEDBACK_FIELD_MESSAGE, msg);
-    if (FEEDBACK_FIELD_NAME && name) formData.append(FEEDBACK_FIELD_NAME, name);
+  // 1. 建立一個虛擬的 form 元素
+  const form = document.createElement('form');
+  form.action = FEEDBACK_FORM_ACTION_URL;
+  form.method = 'POST';
+  form.target = 'fbIframe'; // 指定送出到頁面中的隱藏 iframe
+  form.style.display = 'none';
 
-    // Google 表單的 formResponse 端點不支援 CORS 讀取回應，
-    // 這裡用 'no-cors' 模式送出：瀏覽器看不到回應內容，但表單仍會正常收到資料。
-    await fetch(FEEDBACK_FORM_ACTION_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
-    });
+  // 2. 建立欄位
+  const createInput = (name, value) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    return input;
+  };
 
-    statusEl.textContent = '感謝您的意見，已送出！🌸';
-    statusEl.className = 'fb-status ok';
-    document.getElementById('fbMessage').value = '';
-    document.getElementById('fbName').value = '';
-    setTimeout(closeFeedback, 1200);
-  } catch (e) {
-    statusEl.textContent = '送出時發生問題，請稍後再試一次。';
-    statusEl.className = 'fb-status err';
+  form.appendChild(createInput(FEEDBACK_FIELD_MESSAGE, msg));
+  if (FEEDBACK_FIELD_NAME && name) {
+    form.appendChild(createInput(FEEDBACK_FIELD_NAME, name));
   }
+
+  // 3. 送出表單
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+
+  // 4. 給予使用者回饋
+  statusEl.textContent = '感謝您的意見，已送出！🌸';
+  statusEl.className = 'fb-status ok';
+  document.getElementById('fbMessage').value = '';
+  document.getElementById('fbName').value = '';
+  setTimeout(closeFeedback, 1200);
 }
 
 let allData   = [];
