@@ -495,12 +495,75 @@ function parseMoney(str) {
   return parseInt(String(str).replace(/[^0-9]/g,'')) || 0;
 }
 
-// ── 核心邏輯：從 Google Sheet 抓取與載入資料 ──
+// ====================================================================
+// 【從 Google Sheet 抓取與載入資料】
+// 抓取策略採「多重備援」：依序嘗試下面 FETCH_STRATEGIES 中的每一種方式，
+// 只要有一種成功讀到內容（且能解析出標題列），就採用該結果，不再往下試。
+//
+// 為什麼要這樣設計？
+//   Google 試算表用「發布為網頁 → CSV」產生的連結，回應通常已經允許
+//   瀏覽器跨網域讀取，所以「直接 fetch」多數時候就能成功，不需要繞道
+//   第三方 CORS 代理。但偶爾仍會因瀏覽器、網路環境而失敗，這時才需要
+//   靠代理服務協助轉接。免費代理服務（如 corsproxy.io）常會無預警
+//   失效、降速或開始要求付費，所以這裡同時準備了多個代理當備援，
+//   而不是只依賴單一個。
+//
+// ▶ 如果之後又出現「抓不到資料」的情況，可以這樣排查／調整：
+//   1. 打開瀏覽器開發者工具(F12) → Console，看是哪一個策略失敗、
+//      錯誤訊息是什麼（每個策略都會印出 [loadSheet] 開頭的訊息）。
+//   2. 如果是某個代理網址失效，可以直接刪除 FETCH_STRATEGIES 陣列裡
+//      對應的那一行，或新增其他代理服務的網址進去。
+//   3. 如果全部都失敗，畫面會自動顯示診斷面板與預設範例資料 DEMO_DATA，
+//      不會整頁空白。
+// ====================================================================
+const FETCH_STRATEGIES = [
+  // 1) 直接抓取（最快、最穩定，Google 發布的 CSV 連結通常允許跨網域讀取）
+  { name: '直接抓取', buildUrl: (url) => url },
+  // 2) 【可更動】備援代理 A：allorigins（穩定度高，免費額度大）
+  { name: '代理 allorigins', buildUrl: (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) },
+  // 3) 【可更動】備援代理 B：corsproxy.io
+  { name: '代理 corsproxy.io', buildUrl: (url) => 'https://corsproxy.io/?' + encodeURIComponent(url) },
+  // 4) 【可更動】備援代理 C：codetabs（另一個常見免費代理，多一層保險）
+  { name: '代理 codetabs', buildUrl: (url) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url) },
+  // 【可更動】要新增其他代理服務，依照上面格式繼續往下加一行即可
+];
+
+// 幫網址加上時間戳參數，避免瀏覽器或代理伺服器快取到舊版試算表內容
+function withCacheBuster(url) {
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}_cb=${Date.now()}`;
+}
+
 async function loadSheet() {
+  const targetUrl = withCacheBuster(SHEET_CSV_URL);
+  let text = null;
+  let lastError = null;
+
+  // 依序嘗試每一種抓取策略，成功一個就停止
+  for (const strategy of FETCH_STRATEGIES) {
+    try {
+      const fetchUrl = strategy.buildUrl(targetUrl);
+      const r = await fetch(fetchUrl, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const candidate = await r.text();
+
+      // 簡單驗證抓回來的內容像不像一份 CSV／表格資料，
+      // 避免代理伺服器回傳的是錯誤頁面(HTML)卻被誤判成功
+      if (!candidate || candidate.trim().length === 0) throw new Error('回應內容為空');
+      if (/^\s*<(!doctype|html)/i.test(candidate)) throw new Error('回應內容是 HTML 頁面，不是 CSV');
+
+      text = candidate;
+      debugInfo.push(`✅ 使用「${strategy.name}」成功讀取資料`);
+      break;
+    } catch (e) {
+      lastError = e;
+      debugInfo.push(`⚠ 「${strategy.name}」失敗：${e.message}`);
+    }
+  }
+
   try {
-    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(SHEET_CSV_URL));
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const text = await r.text();
+    if (text === null) throw lastError || new Error('所有抓取方式皆失敗');
+
     rawLines = text.split('\n');
 
     const allRows = parseCSVFull(text);
