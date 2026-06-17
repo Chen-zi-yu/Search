@@ -109,7 +109,7 @@
     display: flex; 
     align-items: flex-start; 
     gap: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: default;
   }
 
@@ -118,29 +118,6 @@
     transform: translateX(6px);
     box-shadow: 0 4px 18px rgba(242,167,195,0.18);
     background: var(--white); 
-  }
-
-  /* 可點擊連結至相簿的明細框 */
-  .item-row.linkable {
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-  }
-  .item-row.linkable:hover {
-    border-color: var(--rose);
-    box-shadow: 0 6px 22px rgba(242,167,195,0.3);
-  }
-  .item-link-icon {
-    flex-shrink: 0;
-    align-self: center;
-    font-size: 0.95rem;
-    color: var(--rose-mid);
-    opacity: 0.6;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .item-row.linkable:hover .item-link-icon {
-    opacity: 1;
-    transform: translateX(3px);
   }
 
   /* 移除偶數行的特殊背景色 */
@@ -190,28 +167,6 @@
   @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-8px);opacity:1} }
   .no-result { text-align:center; padding:3rem 1rem; color:var(--text-light); font-size:0.9rem; }
 
-  /* 意見回饋區塊 */
-  .feedback-section {
-    margin-top:1.2rem; background:var(--white);
-    border:1px solid var(--border); border-radius:16px;
-    padding:1.3rem 1.4rem; display:flex; align-items:center; justify-content:space-between; gap:1rem;
-    box-shadow:0 4px 16px rgba(242,167,195,0.1);
-  }
-  .feedback-info .feedback-label { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--rose-mid); margin-bottom:0.3rem; }
-  .feedback-info .feedback-title { font-size:1rem; font-weight:600; color:var(--text-mid); }
-  .feedback-info .feedback-sub { font-size:0.78rem; color:var(--text-light); margin-top:2px; }
-  .feedback-btn {
-    background:linear-gradient(135deg,var(--rose),var(--rose-mid)); border:none; color:var(--white);
-    font-family:'Noto Sans TC',sans-serif; font-size:0.82rem; font-weight:600;
-    padding:0.55rem 1.2rem; border-radius:50px; cursor:pointer; text-decoration:none; white-space:nowrap;
-    transition:box-shadow 0.2s,transform 0.2s; display:inline-block;
-  }
-  .feedback-btn:hover { box-shadow:0 4px 16px rgba(228,121,159,0.45); transform:translateY(-1px); }
-  @media (max-width:520px) {
-    .feedback-section, .catalog-section { flex-direction:column; align-items:flex-start; }
-    .feedback-btn, .catalog-btn { align-self:flex-start; }
-  }
-
   footer { text-align:center; padding:1.5rem; font-size:0.72rem; color:var(--text-light); letter-spacing:2px; border-top:1px solid var(--border); }
 </style>
 </head>
@@ -246,8 +201,6 @@
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaeOLMSqtncdw8BNX3g1ullp-ala-D1-qVhFPMPcKWH_M53UJwQaQ0R2OfZlwMIx9KEwOlHkIiZcHD/pub?gid=0&single=true&output=csv';
 /* 【可更動】設定導引按鈕的連結 */
 const CATALOG_URL   = 'https://chen-zi-yu.github.io/ITZY/';
-/* 【可更動】設定意見回饋表單連結 */
-const FEEDBACK_URL  = 'https://docs.google.com/forms/d/e/1FAIpQLSeZBxBAUXKRYSAmjKhPuH7_4Hek7_OOT5K-wqblJ14y6t_czw/viewform?usp=publish-editor';
 
 let allData   = [];
 let headers   = [];
@@ -369,14 +322,6 @@ function showInitState(showDebug) {
       ${dbg}
       <div class="big-icon">🌸</div>
       <p>在上方輸入名稱搜尋<br>即可查看拆卡明細與對帳金額</p>
-    </div>
-    <div class="feedback-section">
-      <div class="feedback-info">
-        <div class="feedback-label">意見回饋</div>
-        <div class="feedback-title">使用上有任何問題或建議嗎？</div>
-        <div class="feedback-sub">歡迎留下您的使用狀況，我們會盡快確認</div>
-      </div>
-      <a class="feedback-btn" href="${FEEDBACK_URL}" target="_blank" rel="noopener">填寫回饋表單 →</a>
     </div>`;
 }
 
@@ -461,25 +406,6 @@ function itemStatusBadge(row) {
   return {cls:'dot-unpaid', label:`⚠ 欠 NT$${unpaid.toLocaleString()}`};
 }
 
-// ── 核心邏輯：依明細文字關鍵字比對，判斷應連結到 gallery.html 的哪個相簿 ──
-// 目前僅支援 motto 系列；未來新增系列時，可在此擴充判斷規則
-function matchGalleryLink(text) {
-  const t = text || '';
-  // 「快閃店」相關關鍵字 → motto / popup
-  if (/快閃|周邊|小卡套|鑰匙圈|紙膠帶|海報|壓克力/.test(t)) {
-    return { id: 'motto', album: 'popup' };
-  }
-  // 「專輯」相關關鍵字 → motto / album
-  if (/單封|photobook|poca|特別版|磁帶|專輯|cassette/i.test(t)) {
-    return { id: 'motto', album: 'album' };
-  }
-  // 簽售／合影／線上線下相關關鍵字 → motto / offline
-  if (/線上|線下|合影|簽售|簽名|留[娜哈貓比耶]|留卡|留牙痛|bdm|wm1|wm2|ms1|ms2|ms3|ms末場|sr1|上海|香港/i.test(t)) {
-    return { id: 'motto', album: 'offline' };
-  }
-  return null;
-}
-
 // ── 渲染 UI 顯示搜尋結果 ──
 function renderResults(rows) {
   if (!rows.length) {
@@ -534,28 +460,14 @@ function renderResults(rows) {
     itemLines.forEach((line) => {
       const clean = line.replace(/^\s*\d+[.\uff0e]\s*/,'').trim();
       if (!clean) return;
-      const link = matchGalleryLink(clean);
-      const galleryUrl = link ? `gallery.html?id=${encodeURIComponent(link.id)}&album=${encodeURIComponent(link.album)}` : null;
-      if (galleryUrl) {
-        html += `
-          <a class="item-row linkable" href="${galleryUrl}">
-            <div class="item-number">✨</div>
-            <div class="item-desc">
-              ${clean}
-              <div class="item-confirm">已登記 · 點擊查看相簿照片</div>
-            </div>
-            <div class="item-link-icon">📷 →</div>
-          </a>`;
-      } else {
-        html += `
-          <div class="item-row">
-            <div class="item-number">✨</div>
-            <div class="item-desc">
-              ${clean}
-              <div class="item-confirm">已登記</div>
-            </div>
-          </div>`;
-      }
+      html += `
+        <div class="item-row">
+          <div class="item-number">✨</div>
+          <div class="item-desc">
+            ${clean}
+            <div class="item-confirm">已登記</div>
+          </div>
+        </div>`;
     });
     html += `</div>`;
   }
@@ -572,15 +484,6 @@ function renderResults(rows) {
         <div class="catalog-sub">點擊查看你的小卡完整圖鑑</div>
       </div>
       <a class="catalog-btn" href="${CATALOG_URL}" target="_blank" rel="noopener">前往圖鑑 →</a>
-    </div>
-
-    <div class="feedback-section">
-      <div class="feedback-info">
-        <div class="feedback-label">意見回饋</div>
-        <div class="feedback-title">對拆卡明細或網站使用有任何問題？</div>
-        <div class="feedback-sub">歡迎留下您的使用狀況與建議，我們會盡快確認</div>
-      </div>
-      <a class="feedback-btn" href="${FEEDBACK_URL}" target="_blank" rel="noopener">填寫回饋表單 →</a>
     </div>`;
 
   document.getElementById('mainContent').innerHTML = html;
