@@ -377,17 +377,55 @@ const FEEDBACK_FIELD_NAME       = 'entry.1475059438';      // 【可更動】填
      - 如果以後想拿掉這個「返回」功能，只要把下面 ENABLE_BACK_TO_SEARCH
        改成 false 即可（gallery.html 完全不用動，因為判斷邏輯都在它
        接收到的網址參數上）。
+
+   ====================================================================
+   【返回後自動還原搜尋結果】設定
+   單純「返回」只是把使用者帶回 index.html 首頁，但搜尋框會是空的，
+   還要使用者重新輸入一次姓名才能看到原本的明細，體驗不好。
+
+   做法：在組成「返回網址」時，把目前正在查看的拆卡者姓名一起包進去，
+   變成像 index.html?q=Han%20Han 這樣的網址，再把這串完整網址當作
+   back 參數傳給 gallery.html。gallery.html 的返回按鈕只是直接套用
+   它收到的 back 網址（完全不用修改 gallery.html），所以使用者按下
+   「返回拆卡查詢」時，網址列就會自動帶著 ?q=人名 回到本頁。
+
+   本頁載入時（見下方 restoreSearchFromUrl 函式）會檢查網址是否帶有
+   q 參數，如果有，就自動把姓名填入搜尋框並直接觸發搜尋，不需要使用者
+   再重新輸入一次。
+
+   ▶ 如何調整：
+     - QUERY_PARAM_KEY：若想換成別的參數名稱（例如 name），改這裡，
+       且不需要改 gallery.html，因為 gallery.html 不會去解析這個參數，
+       它只是把整個 back 網址原封不動當作返回連結使用。
+     - 如果想拿掉「返回後自動還原搜尋」這個行為，只要把下面
+       ENABLE_RESTORE_SEARCH 改成 false 即可，返回後會看到空白搜尋框
+       （但 ENABLE_BACK_TO_SEARCH 仍可繼續運作，只是不會帶 q 參數）。
    ==================================================================== */
 const ENABLE_BACK_TO_SEARCH = true;  // 【可更動】是否在連去 gallery 時帶上「可返回」標記
 const SEARCH_PAGE_URL = 'https://chen-zi-yu.github.io/Search/index.html'; // 【可更動】填入本頁(index.html)實際的完整網址
 const BACK_PARAM_KEY  = 'from';      // 【可更動】來源標記的參數名稱
 const BACK_PARAM_VAL  = 'search';    // 【可更動】來源標記的參數值，需與 gallery.html 中判斷的值一致
+const ENABLE_RESTORE_SEARCH = true;  // 【可更動】返回時是否自動還原原本搜尋的姓名
+const QUERY_PARAM_KEY = 'q';         // 【可更動】用來夾帶搜尋姓名的網址參數名稱
+
+// 目前正在查看的拆卡者姓名（在 renderResults 顯示明細時會被賦值）
+// 用來組成「返回網址」時夾帶在 back 參數裡，讓使用者按返回能直接看到原本搜尋的結果
+let currentSearchedName = '';
 
 // 幫 gallery 連結網址加上「可返回」標記與返回目標網址
+// 返回目標網址（SEARCH_PAGE_URL）本身也會視情況加上 ?q=目前搜尋的姓名，
+// 這樣 gallery.html 按下返回按鈕時，會直接帶著姓名回到本頁並自動還原搜尋結果
 function withBackToSearchParam(url) {
   if (!ENABLE_BACK_TO_SEARCH) return url;
+
+  let backTarget = SEARCH_PAGE_URL;
+  if (ENABLE_RESTORE_SEARCH && currentSearchedName) {
+    const sep2 = backTarget.includes('?') ? '&' : '?';
+    backTarget = `${backTarget}${sep2}${QUERY_PARAM_KEY}=${encodeURIComponent(currentSearchedName)}`;
+  }
+
   const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}${BACK_PARAM_KEY}=${encodeURIComponent(BACK_PARAM_VAL)}&back=${encodeURIComponent(SEARCH_PAGE_URL)}`;
+  return `${url}${sep}${BACK_PARAM_KEY}=${encodeURIComponent(BACK_PARAM_VAL)}&back=${encodeURIComponent(backTarget)}`;
 }
 const GALLERY_PAGE_URL     = 'https://chen-zi-yu.github.io/ITZY/gallery.html'; // 【可更動】若 gallery.html 路徑不同，改這裡
 const GALLERY_FALLBACK_URL = 'https://chen-zi-yu.github.io/ITZY/gallery.html?id=motto&album=offline'; // 【可更動】比對不到時的預設相簿連結
@@ -646,12 +684,48 @@ async function loadSheet() {
 
     debugInfo.push(`有效資料 ${allData.length} 筆`);
     showInitState(false);
+    // 【返回後自動還原搜尋】資料載入完成後，檢查網址是否帶有 q 參數，
+    // 若有則自動把姓名填入搜尋框並觸發搜尋（見下方函式定義）
+    restoreSearchFromUrl();
   } catch(e) {
     debugInfo.push('❌ 讀取失敗：' + e.message);
     allData = DEMO_DATA;
     headers = Object.keys(DEMO_DATA[0]);
     showInitState(true);
+    restoreSearchFromUrl();
   }
+}
+
+// ====================================================================
+// 【返回後自動還原搜尋】頁面載入時還原網址中夾帶的搜尋姓名
+//
+// 當使用者從 gallery.html 按下「返回拆卡查詢」回到本頁時，網址會像
+// index.html?q=Han%20Han 這樣帶有 q 參數（參數名稱由上面 QUERY_PARAM_KEY
+// 設定）。這個函式會讀出該參數，自動把姓名填入搜尋框並直接顯示明細，
+// 讓使用者不需要再重新輸入一次姓名搜尋。
+//
+// 若使用者是「直接打開」本頁（網址沒有帶 q 參數，例如第一次造訪、
+// 或自己手動輸入網址），則完全不受影響，會照常顯示空白搜尋框與初始畫面。
+//
+// ▶ 如何調整：
+//   - 想關閉這個功能：把上面 ENABLE_RESTORE_SEARCH 改成 false 即可。
+//   - 想還原後「不要」自動清掉網址上的 q 參數（方便重新整理頁面時仍
+//     保留搜尋狀態）：把下面 history.replaceState 那一行刪除或註解掉。
+// ====================================================================
+function restoreSearchFromUrl() {
+  if (!ENABLE_RESTORE_SEARCH) return;
+  const params = new URLSearchParams(window.location.search);
+  const savedName = params.get(QUERY_PARAM_KEY);
+  if (!savedName) return;
+
+  document.getElementById('searchInput').value = savedName;
+  document.getElementById('clearBtn').style.display = 'block';
+  search(savedName);
+
+  // 還原完成後，把網址上的 q 參數清掉，避免使用者重新整理頁面時
+  // 網址列一直停留著舊的查詢字串（不影響上面已經顯示出來的搜尋結果）
+  const cleanUrl = window.location.pathname;
+  history.replaceState(null, '', cleanUrl);
 }
 
 // ── 頁面狀態顯示器 ──
@@ -766,6 +840,9 @@ function renderResults(rows) {
 
   const row = rows[0];
   const name    = getVal(row,'拆卡者','拆卡','名稱');
+  // 【返回後自動還原搜尋】記錄目前正在查看的姓名，
+  // 這樣稍後產生「前往圖鑑」連結時，才能把這個姓名一起包進返回網址裡
+  currentSearchedName = name;
   const payWay  = getVal(row,'付款方式','付款');
   const total   = parseMoney(getVal(row,'總金額','金額'));
   const paid    = parseMoney(getVal(row,'已經付款','已付款','已付'));
@@ -829,15 +906,10 @@ function renderResults(rows) {
     html += `<div class="remark-box"><div class="remark-label">備註</div>${note}</div>`;
   }
 
-  html += `
-    <div class="catalog-section">
-      <div class="catalog-info">
-        <div class="catalog-label">小卡圖鑑</div>
-        <div class="catalog-title">ITZY 專輯與周邊紀錄庫</div>
-        <div class="catalog-sub">點擊查看你的小卡完整圖鑑</div>
-      </div>
-      <a class="catalog-btn" href="${CATALOG_URL}" target="_blank" rel="noopener">前往圖鑑 →</a>
-    </div>`;
+  // 【已移除】原本這裡有一個「小卡圖鑑」導覽區塊，連到 CATALOG_URL。
+  // 因為頂部 header 的 .kpop-banner 已經是持續存在的相同連結，
+  // 為避免重複顯示，這裡不再額外渲染。若想恢復，可參考 CATALOG_URL
+  // 這個變數（定義在檔案開頭），自行加回一段 <a href="${CATALOG_URL}">...</a>。
 
   document.getElementById('mainContent').innerHTML = html;
 }
