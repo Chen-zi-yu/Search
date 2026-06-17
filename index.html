@@ -42,6 +42,68 @@
   .kpop-banner:hover { box-shadow:0 4px 18px rgba(184,169,217,0.4); transform:translateY(-2px); }
   .kpop-banner .banner-text { font-size:0.82rem; color:var(--text-mid); font-weight:500; }
 
+  /* ====================================================================
+     【意見回饋區】樣式
+     可更動項目：
+       - .feedback-bar：未點擊時顯示的小提示框外觀（顏色、圓角、間距）
+       - .feedback-modal：點擊後跳出的全螢幕遮罩
+       - .feedback-box：跳出視窗本體的外觀
+     ==================================================================== */
+  .feedback-bar {
+    max-width:680px; margin:0.9rem auto 0;
+    background:var(--white); border:1.5px dashed var(--rose);
+    border-radius:50px; padding:0.55rem 1.4rem;
+    display:flex; align-items:center; justify-content:center; gap:0.6rem;
+    cursor:pointer; transition:box-shadow 0.2s,transform 0.2s,background 0.2s;
+  }
+  .feedback-bar:hover { box-shadow:0 4px 18px rgba(242,167,195,0.35); transform:translateY(-2px); background:var(--rose-light); }
+  .feedback-bar .fb-icon { font-size:1rem; }
+  .feedback-bar .fb-text { font-size:0.82rem; color:var(--text-mid); font-weight:500; }
+
+  /* 跳出視窗的半透明背景遮罩 */
+  .feedback-modal {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(45,31,46,0.55); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    z-index:2000; opacity:0; pointer-events:none; transition:opacity 0.3s ease;
+    padding:1.2rem;
+  }
+  .feedback-modal.active { opacity:1; pointer-events:auto; }
+
+  /* 跳出視窗本體 */
+  .feedback-box {
+    background:var(--cream); border-radius:20px; padding:1.6rem 1.5rem;
+    width:100%; max-width:420px; box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    transform:scale(0.94); transition:transform 0.3s ease;
+  }
+  .feedback-modal.active .feedback-box { transform:scale(1); }
+  .feedback-box h3 { font-family:'Playfair Display',serif; color:var(--rose-deep); font-size:1.2rem; margin-bottom:0.3rem; }
+  .feedback-box .fb-sub { font-size:0.78rem; color:var(--text-light); margin-bottom:1rem; line-height:1.6; }
+  .feedback-box textarea {
+    width:100%; min-height:110px; border:1.5px solid var(--border); border-radius:14px;
+    padding:0.8rem 1rem; font-family:'Noto Sans TC',sans-serif; font-size:0.9rem;
+    color:var(--text-dark); resize:vertical; outline:none; transition:border-color 0.2s;
+  }
+  .feedback-box textarea:focus { border-color:var(--rose); }
+  .feedback-box input[type="text"] {
+    width:100%; border:1.5px solid var(--border); border-radius:50px;
+    padding:0.6rem 1rem; font-family:'Noto Sans TC',sans-serif; font-size:0.85rem;
+    color:var(--text-dark); outline:none; margin-bottom:0.7rem; transition:border-color 0.2s;
+  }
+  .feedback-box input[type="text"]:focus { border-color:var(--rose); }
+  .feedback-actions { display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1rem; }
+  .fb-btn {
+    font-family:'Noto Sans TC',sans-serif; font-size:0.85rem; font-weight:600;
+    padding:0.5rem 1.2rem; border-radius:50px; cursor:pointer; border:none; transition:transform 0.15s,box-shadow 0.15s;
+  }
+  .fb-btn-cancel { background:transparent; color:var(--text-light); }
+  .fb-btn-cancel:hover { color:var(--text-mid); }
+  .fb-btn-submit { background:var(--rose); color:white; }
+  .fb-btn-submit:hover { box-shadow:0 4px 14px rgba(242,167,195,0.5); transform:translateY(-1px); }
+  .fb-status { font-size:0.78rem; margin-top:0.6rem; min-height:1.2em; }
+  .fb-status.ok { color:var(--green); }
+  .fb-status.err { color:var(--rose-deep); }
+
   /* 搜尋列區域 */
   .search-wrap { max-width:640px; margin:1.8rem auto 0; padding:0 1.5rem; }
   .search-box {
@@ -120,6 +182,14 @@
     background: var(--white); 
   }
 
+  /* 【可更動】可點擊連到圖鑑(gallery.html)的品項列額外樣式 */
+  .item-row.clickable { cursor:pointer; }
+  .item-row.clickable .item-desc { text-decoration: none; }
+  .item-link-hint {
+    font-size:0.68rem; color:var(--lavender-mid); margin-top:4px;
+    display:inline-flex; align-items:center; gap:3px; letter-spacing:0.5px;
+  }
+
   /* 移除偶數行的特殊背景色 */
   .items-list > .item-row:nth-child(even) {
     background: var(--white);
@@ -179,6 +249,17 @@
     <span>📸</span>
     <span class="banner-text">前往 ITZY 小卡圖鑑，查看所有小卡照片 →</span>
   </a>
+
+  <!-- ====================================================================
+       【意見回饋區】觸發按鈕
+       點擊後會打開下方的 #feedbackModal 跳出視窗。
+       想調整顯示文字，直接修改下面 .fb-text 裡的文字即可。
+       ==================================================================== -->
+  <div class="feedback-bar" onclick="openFeedback()">
+    <span class="fb-icon">💬</span>
+    <span class="fb-text">點此留下您的意見或建議</span>
+  </div>
+
   <div class="search-wrap">
     <div class="search-box">
       <span class="search-icon">🔍</span>
@@ -196,11 +277,175 @@
 
 <footer>✦ &nbsp; ITZY MIDZY 날자 &nbsp; ✦</footer>
 
+<!-- ====================================================================
+     【意見回饋區】跳出視窗本體
+     可更動項目：
+       - h3 / .fb-sub 文字：跳出視窗的標題與說明文字
+       - placeholder：輸入框的提示文字
+       - submitFeedback() 函式（在下方 JS 程式碼中）：決定送出後資料要去哪裡
+     ==================================================================== -->
+<div class="feedback-modal" id="feedbackModal" onclick="if(event.target===this) closeFeedback()">
+  <div class="feedback-box">
+    <h3>💬 意見回饋</h3>
+    <div class="fb-sub">有任何想法、錯誤回報或建議都歡迎留言給我們，謝謝您的支持 🌸</div>
+    <input type="text" id="fbName" placeholder="您的稱呼（選填）" autocomplete="off" />
+    <textarea id="fbMessage" placeholder="請輸入您想提供的意見……"></textarea>
+    <div class="fb-status" id="fbStatus"></div>
+    <div class="feedback-actions">
+      <button class="fb-btn fb-btn-cancel" onclick="closeFeedback()">取消</button>
+      <button class="fb-btn fb-btn-submit" onclick="submitFeedback()">送出</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* 【可更動】設定您的 Google Sheet 發布連結 (CSV 格式) */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaeOLMSqtncdw8BNX3g1ullp-ala-D1-qVhFPMPcKWH_M53UJwQaQ0R2OfZlwMIx9KEwOlHkIiZcHD/pub?gid=0&single=true&output=csv';
 /* 【可更動】設定導引按鈕的連結 */
 const CATALOG_URL   = 'https://chen-zi-yu.github.io/ITZY/';
+
+/* ====================================================================
+   【意見回饋區】設定
+   目前為「佔位狀態」：尚未連接任何真正能收信的服務，送出時只會在畫面顯示
+   提示文字，並把內容印在瀏覽器 Console，方便您測試畫面操作。
+
+   ▶ 之後想要串接 Google 表單，請依下列步驟調整：
+     1. 到 Google 表單後台，點選右上角「⋮」→「取得預先填入的連結」，
+        或在表單頁面打開「檢視原始碼」找到 action="https://docs.google.com/forms/d/e/xxxxxxxx/formResponse"
+        把該網址填入下面 FEEDBACK_FORM_ACTION_URL。
+     2. 在表單編輯模式，把滑鼠移到「意見內容」題目上，打開瀏覽器開發者工具(F12)，
+        找到 <input> 或 <textarea> 的 name="entry.123456789"，
+        把數字部分填入下面 FEEDBACK_FIELD_MESSAGE。
+     3. 同樣方式找出「稱呼/姓名」題目的 entry 編號，填入 FEEDBACK_FIELD_NAME。
+        如果表單沒有姓名欄位，可以保持空字串 '' 不填。
+     4. 把下面的 FEEDBACK_ENABLED 改成 true，即可正式啟用送出功能。
+   ==================================================================== */
+const FEEDBACK_ENABLED          = false;   // 【可更動】串接好表單後，把這裡改成 true
+const FEEDBACK_FORM_ACTION_URL  = '';      // 【可更動】填入 Google 表單的 formResponse 網址
+const FEEDBACK_FIELD_MESSAGE    = '';      // 【可更動】填入「意見內容」欄位的 entry 編號，例如 'entry.111111'
+const FEEDBACK_FIELD_NAME       = '';      // 【可更動】填入「稱呼/姓名」欄位的 entry 編號（沒有此欄位可留空）
+
+/* ====================================================================
+   【拆卡明細 → 圖鑑(gallery.html)連結】設定
+
+   每一筆拆卡品項都是從 Google Sheet 抓來的「自由文字」（例如：
+   "MS1.0 線上食譜留娜 匯款"），無法100%精準對應到 gallery.html 裡的相簿，
+   因此採用「關鍵字比對」：只要品項文字中包含某組關鍵字，就視為命中
+   對應的相簿，點擊後會跳到 gallery.html?id=xxx&album=yyy。
+
+   ⚠ 注意：gallery.html 本身不會被修改（保持原檔案不變），而它原本的
+   設計是「網址沒帶 id/album 參數，或參數對不到，就顯示『找不到該分組
+   相簿』」。為了避免使用者點下去看到錯誤訊息，當所有關鍵字都比對不到
+   時，會改連到下面 GALLERY_FALLBACK_URL 指定的「預設相簿」，而不是
+   連到完全空白的 gallery.html。
+
+   ▶ 如何新增/調整對照規則：
+     在下面 GALLERY_LINK_RULES 陣列中新增一筆物件即可，格式為：
+       { keywords: ['關鍵字1','關鍵字2'], id: 'gallery.html中的id', album: 'gallery.html中的album' }
+     - keywords：陣列中只要有任何一個關鍵字出現在品項文字裡就算命中
+                 （比對時會忽略大小寫與全形/半形空白）
+     - id / album：要對應到 gallery.html 的 photosDatabase 裡的哪一組
+                   key（請打開 gallery.html 內的 photosDatabase 物件確認
+                   目前有哪些 id 與 album 可用，例如 motto.offline、
+                   motto.album、motto.popup、gold.gold...）
+     - 比對順序：陣列「越前面優先比對」，所以越精確、越具體的關鍵字
+                 規則請放在陣列前面，越廣泛的規則放後面。
+
+   ▶ 如何調整「比對不到時」要連去哪個預設相簿：
+     修改下面 GALLERY_FALLBACK_URL 的 id 與 album 參數即可，
+     例如想改成導向 GOLD 專輯相簿，就改成：
+       'gallery.html?id=gold&album=gold'
+   ==================================================================== */
+const GALLERY_PAGE_URL     = 'gallery.html'; // 【可更動】若 gallery.html 路徑不同，改這裡
+const GALLERY_FALLBACK_URL = 'gallery.html?id=motto&album=offline'; // 【可更動】比對不到時的預設相簿連結
+
+const GALLERY_LINK_RULES = [
+  // ── Motto 系列：線下簽售 / 線上抽選相關關鍵字 ──
+  { keywords: ['線下','BDM','WM1.0','WM2.0','MS1.0','MS2.0','MS3.0','末場','SR1.0','上海','香港'], id: 'motto', album: 'offline' },
+  // ── Motto 系列：快閃店周邊 ──
+  { keywords: ['快閃店','快閃','周邊','鑰匙圈','紙膠帶'], id: 'motto', album: 'popup' },
+  // ── Motto 系列：專輯內頁配置 ──
+  { keywords: ['單封','PhotoBook','POCA','特別版','磁帶'], id: 'motto', album: 'album' },
+  // ── GOLD 專輯 ──
+  { keywords: ['GOLD','金專'], id: 'gold', album: 'gold' },
+  // 【可更動】要新增其他系列，依照上面格式繼續往下加一行即可
+];
+
+// 將文字正規化（去除空白、轉小寫），方便關鍵字比對
+function normalizeForMatch(s) {
+  return (s || '').replace(/[\s\u3000\ufeff]/g, '').toLowerCase();
+}
+
+// 依照拆卡品項文字，找出對應的 gallery.html 連結網址
+function getGalleryLinkForItem(itemText) {
+  const target = normalizeForMatch(itemText);
+  for (const rule of GALLERY_LINK_RULES) {
+    const hit = rule.keywords.some(k => target.includes(normalizeForMatch(k)));
+    if (hit) {
+      return `${GALLERY_PAGE_URL}?id=${encodeURIComponent(rule.id)}&album=${encodeURIComponent(rule.album)}`;
+    }
+  }
+  // 比對不到任何關鍵字時，導向預設相簿（而非完全空白的 gallery.html）
+  return GALLERY_FALLBACK_URL;
+}
+
+function openFeedback() {
+  document.getElementById('fbStatus').textContent = '';
+  document.getElementById('fbStatus').className = 'fb-status';
+  document.getElementById('feedbackModal').classList.add('active');
+}
+function closeFeedback() {
+  document.getElementById('feedbackModal').classList.remove('active');
+}
+
+// 按下 ESC 鍵也能關閉意見回饋視窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeFeedback();
+});
+
+async function submitFeedback() {
+  const msg = document.getElementById('fbMessage').value.trim();
+  const name = document.getElementById('fbName').value.trim();
+  const statusEl = document.getElementById('fbStatus');
+
+  if (!msg) {
+    statusEl.textContent = '請輸入意見內容後再送出 🌸';
+    statusEl.className = 'fb-status err';
+    return;
+  }
+
+  // ── 尚未啟用串接時的「佔位」行為：僅顯示提示、印在 Console，方便測試畫面 ──
+  if (!FEEDBACK_ENABLED || !FEEDBACK_FORM_ACTION_URL) {
+    console.log('[意見回饋- 佔位測試]', { name, msg });
+    statusEl.textContent = '（測試模式）尚未連接表單，內容已印在瀏覽器 Console。';
+    statusEl.className = 'fb-status ok';
+    return;
+  }
+
+  // ── 已啟用串接後，正式送往 Google 表單 ──
+  try {
+    const formData = new FormData();
+    formData.append(FEEDBACK_FIELD_MESSAGE, msg);
+    if (FEEDBACK_FIELD_NAME && name) formData.append(FEEDBACK_FIELD_NAME, name);
+
+    // Google 表單的 formResponse 端點不支援 CORS 讀取回應，
+    // 這裡用 'no-cors' 模式送出：瀏覽器看不到回應內容，但表單仍會正常收到資料。
+    await fetch(FEEDBACK_FORM_ACTION_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    });
+
+    statusEl.textContent = '感謝您的意見，已送出！🌸';
+    statusEl.className = 'fb-status ok';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbName').value = '';
+    setTimeout(closeFeedback, 1200);
+  } catch (e) {
+    statusEl.textContent = '送出時發生問題，請稍後再試一次。';
+    statusEl.className = 'fb-status err';
+  }
+}
 
 let allData   = [];
 let headers   = [];
@@ -460,12 +705,15 @@ function renderResults(rows) {
     itemLines.forEach((line) => {
       const clean = line.replace(/^\s*\d+[.\uff0e]\s*/,'').trim();
       if (!clean) return;
+      // 【拆卡明細→圖鑑連結】依品項文字比對出對應的 gallery.html 連結
+      const galleryUrl = getGalleryLinkForItem(clean);
       html += `
-        <div class="item-row">
+        <div class="item-row clickable" onclick="window.open('${galleryUrl}', '_blank')" title="點擊查看此品項的拆卡圖鑑">
           <div class="item-number">✨</div>
           <div class="item-desc">
             ${clean}
             <div class="item-confirm">已登記</div>
+            <div class="item-link-hint">🖼️ 點擊查看拆卡圖鑑 →</div>
           </div>
         </div>`;
     });
