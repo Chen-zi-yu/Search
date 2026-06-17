@@ -297,6 +297,9 @@
     </div>
   </div>
 </div>
+</div>
+
+<iframe name="fbIframe" style="display:none;width:0;height:0;border:0;pointer-events:none;"></iframe>
 
 <script>
 /* 【可更動】設定您的 Google Sheet 發布連結 (CSV 格式) */
@@ -486,10 +489,15 @@ function submitFeedback() {
     return;
   }
 
+  saveFeedbackLocally(name || '匿名', msg);
+
   if (!FEEDBACK_ENABLED || !FEEDBACK_FORM_ACTION_URL) {
     console.log('[意見回饋- 佔位測試]', { name, msg });
-    statusEl.textContent = '（測試模式）尚未連接表單，內容已印在瀏覽器 Console。';
+    statusEl.textContent = '已儲存在本機端，且屬於測試模式，尚未連接正式表單。';
     statusEl.className = 'fb-status ok';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbName').value = '';
+    setTimeout(closeFeedback, 1200);
     return;
   }
 
@@ -514,17 +522,31 @@ function submitFeedback() {
     form.appendChild(createInput(FEEDBACK_FIELD_NAME, name));
   }
 
-  // 3. 送出表單
+  // 3. 送出表單（仍會保留本機備份）
   document.body.appendChild(form);
   form.submit();
   document.body.removeChild(form);
 
   // 4. 給予使用者回饋
-  statusEl.textContent = '感謝您的意見，已送出！🌸';
+  statusEl.textContent = '已儲存在本機端，並嘗試送出到正式表單。';
   statusEl.className = 'fb-status ok';
   document.getElementById('fbMessage').value = '';
   document.getElementById('fbName').value = '';
   setTimeout(closeFeedback, 1200);
+}
+
+function saveFeedbackLocally(name, message) {
+  try {
+    const feedbackList = JSON.parse(localStorage.getItem('itzyFeedback') || '[]');
+    feedbackList.push({
+      name,
+      message,
+      createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem('itzyFeedback', JSON.stringify(feedbackList));
+  } catch (e) {
+    console.warn('本機儲存失敗：', e);
+  }
 }
 
 let allData   = [];
