@@ -255,7 +255,7 @@
   <div class="site-sub">MOTTO × 簽售拆卡</div>
  <a class="kpop-banner" href="https://chen-zi-yu.github.io/ITZY/" target="_blank" rel="noopener">
     <span>📸</span>
-    <span class="banner-text">前往 ITZY 小卡圖鑑，查看所有小卡照片 →</span>
+    <span class="banner-text">前往 ITZY 周邊圖鑑，查看所有周邊照片 →</span>
   </a>
 
   <!-- ====================================================================
@@ -934,7 +934,7 @@ function derivePaymentStatusFromRow(payText) {
 function getItemPaymentStatus(itemText, rowPayText) {
   const normalized = normalize(itemText);
   // 待選擇付款方式：需同時包含兩個金額標籤
-  if (normalized.includes(normalize('匯款110')) && normalized.includes(normalize('貨付130'))) {
+  if (normalized.includes(normalize('匯款')) && normalized.includes(normalize('貨付'))) {
     return '待選擇付款方式';
   }
   // 未付款：檢查「尚未」開頭的否定詞
@@ -1098,11 +1098,6 @@ function renderResults(rows) {
   if (note) {
     html += `<div class="remark-box"><div class="remark-label">備註</div>${note}</div>`;
   }
-
-  // 【已移除】原本這裡有一個「小卡圖鑑」導覽區塊，連到 CATALOG_URL。
-  // 因為頂部 header 的 .kpop-banner 已經是持續存在的相同連結，
-  // 為避免重複顯示，這裡不再額外渲染。若想恢復，可參考 CATALOG_URL
-  // 這個變數（定義在檔案開頭），自行加回一段 <a href="${CATALOG_URL}">...</a>。
 
   document.getElementById('mainContent').innerHTML = html;
 }
