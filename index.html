@@ -99,7 +99,7 @@
   }
   .announcement-modal.active .announcement-box { transform:scale(1); }
   .announcement-box h3 { font-family:'Playfair Display',serif; color:var(--rose-deep); font-size:1.3rem; margin-bottom:0.35rem; }
-  .announcement-box p { color:var(--text-mid); line-height:1.8; margin-bottom:1rem; }
+  .announcement-box p { color:var(--text-mid); line-height:1.8; margin-bottom:1rem; white-space: pre-line; }
   #guideModalContent { white-space: pre-line; }
   .announcement-box .announcement-close {
     margin-top:1rem; display:flex; justify-content:flex-end;
@@ -407,14 +407,25 @@ const FEEDBACK_FIELD_NAME       = 'entry.1475059438';      // 【可更動】填
 // 【重要公告與操作指南設定】
 // 直接修改下面文字即可調整顯示內容
 const ANNOUNCEMENT_TITLE        = '重要公告';
-const ANNOUNCEMENT_MESSAGE      = '請於今日 18:00 前完成資料核對，並確認付款方式是否正確。';
-const ANNOUNCEMENT_MARQUEE_TEXT = '重要公告：請於今日 18:00 前完成資料核對，並確認付款方式是否正確。';
+const ANNOUNCEMENT_MESSAGE      = `有參與ms上海2.0的拆卡者，需在2026/06/19前確認付款方式及付款。
+2026/06/18有在拆卡拆拆拆社群中拆卡，有興趣者可至對應的討論串留言。`;
+const ANNOUNCEMENT_MARQUEE_TEXT = '重要公告：有參與ms上海2.0的拆卡者，需在2026/06/19前確認付款方式及付款。2026/06/18有在拆卡拆拆拆社群中拆卡，有興趣者可至對應的討論串留言。';
 const GUIDE_BUTTON_TEXT         = '📘 操作指南';
 const GUIDE_TITLE               = '操作指南';
 const GUIDE_CONTENT             = `1. 在上方搜尋欄輸入拆卡者姓名。
 2. 若搜尋不到，請確認姓名與大小寫是否正確。
-3. 點擊品項即可進入拆卡圖鑑。
-4. 如果有異常，請使用意見回饋提交問題。`;
+3. 點擊品項即可進入拆卡圖鑑(部分圖鑑上未放置，未搜尋到是正常的)。
+4. 如果有異常，請使用意見回饋提交問題。
+5. 付款為該品項付款狀態
+   - 匯款：已完成匯款
+   - 貨付：貨到付款
+   - 無卡：尚未拆卡
+   - 尚有未付款：尚有品項未付款
+   出貨為該品項出貨狀態
+   - 已出貨：已完成出貨
+   - 未到貨：尚未收到貨品
+   - 尚未下單：以提供賣貨便連結但尚未下單賣貨便。
+6. 若有任何問題，請利用意見回饋聯繫我們。`;
 // ====================================================================
 
 /* ====================================================================
