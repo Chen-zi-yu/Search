@@ -201,6 +201,13 @@
   }
   .item-desc { flex:1; font-size:0.88rem; color:var(--text-dark); line-height:1.6; }
   .item-confirm { font-size:0.7rem; color:var(--text-light); margin-top:3px; letter-spacing:0.5px; }
+  .item-status { display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.6rem; }
+  .item-tag {
+    display:inline-flex; align-items:center; padding:0.3rem 0.7rem; border-radius:999px;
+    font-size:0.72rem; letter-spacing:0.5px; border:1px solid transparent;
+  }
+  .item-pay { background:rgba(242,167,195,0.12); color:var(--rose-deep); border-color:rgba(242,167,195,0.3); }
+  .item-ship { background:rgba(90,171,122,0.12); color:var(--green); border-color:rgba(90,171,122,0.3); }
 
   /* 底部導引區 */
   .catalog-section {
@@ -550,13 +557,13 @@ function saveFeedbackLocally(name, message) {
   }
 }
 
-let allData   = [];
-let headers   = [];
-let rawLines  = [];
-let debugInfo = [];
-let searchTimeout = null;
-let currentSuggestions = [];
-let suggestIndex = -1; // -1 = none selected
+let allData   = [];  // 【重要】從 Google Sheet 抓下來的所有拆卡者資料（JSON 陣列）
+let headers   = [];  // 【重要】試算表的欄位名稱（用來動態尋找欄位位置，容錯性高）
+let rawLines  = [];  // 【診斷用】CSV 原始文本的逐行儲存（協助除錯）
+let debugInfo = [];  // 【診斷用】載入過程的訊息記錄（成功/失敗都會記）
+let searchTimeout = null;     // 【內部用】搜尋延遲計時器（避免使用者每按一個字就重新搜尋）
+let currentSuggestions = [];  // 【內部用】目前顯示的搜尋建議名單
+let suggestIndex = -1;        // 【內部用】使用者用上下鍵選中的建議索引
 
 // ── 核心邏輯：字串正規化處理 ──
 function normalize(s) {
@@ -858,6 +865,11 @@ function search(query) {
 }
 
 // ── 付款標籤樣式輔助函式 ──
+// 【payClass】根據付款方式文字回傳對應的 CSS 類別名稱，用於套用顏色樣式
+// ▶ 修改方式：增加新的判斷條件並定義新的 CSS 類別
+//   例如：if (way.includes('支付寶')) return 'pay-支付寶';
+//   然後在上方 CSS 區塊加入新的樣式：
+//   .pay-支付寶 { background:rgba(0,0,255,0.12); color:blue; border:1px solid rgba(0,0,255,0.3); }
 function payClass(way) {
   if (!way) return '';
   if (way.includes('匯款')) return 'pay-匯款';
@@ -866,6 +878,10 @@ function payClass(way) {
   if (way.includes('尚有未付款') || way.includes('尚未')) return 'pay-尚有未付款';
   return '';
 }
+
+// 【payLabel】根據付款方式文字回傳介面上顯示的友善標籤文字
+// ▶ 修改方式：增加新的判斷條件和對應的顯示文字
+//   例如：if (way.includes('支付寶')) return '💵 支付寶';
 function payLabel(way) {
   if (!way) return '';
   if (way.includes('匯款')) return '💳 匯款';
@@ -875,6 +891,116 @@ function payLabel(way) {
   return way;
 }
 
+
+// ====================================================================
+// 【付款狀態判斷 - 行級別】
+// 從該列的「付款方式」欄位推導付款狀態
+// 
+// ▶ 修改方式：
+//   - 增加新的判斷條件：在下面的 if 陳述句中加入新的檢查
+//   例如：if (text.includes('支付寶')) return '已付款';
+// ====================================================================
+function derivePaymentStatusFromRow(payText) {
+  if (!payText) return '';
+  const text = normalize(payText);
+  if (text.includes('尚未')) return '未付款';
+  if (text.includes('貨')) return '貨到付款';
+  if (text.includes('無卡') || text.includes('匯款')) return '已付款';
+  return payText;
+}
+
+// ====================================================================
+// 【付款狀態判斷 - 品項級別】(優先度最高)
+// 根據品項文字中的提示詞判斷該品項的付款狀態
+// 優先順序很重要：「否定詞」(如『尚未』) 應排在前面
+//
+// 判斷順序：
+//   1️⃣ 同時包含『匯款110』且『貨付130』 → 待選擇付款方式
+//   2️⃣ 包含『尚未匯款』或『尚未無卡』 → 未付款
+//   3️⃣ 包含『已匯款』或『無卡』或『匯款』 → 已付款
+//   4️⃣ 包含『貨付』 → 貨到付款
+//   5️⃣ 都不符合 → 用該列「付款方式」欄位的值
+//
+// ▶ 如何新增判斷邏輯：
+//   - 新增條件在最前面（優先度更高）
+//   例如加在「待選擇付款方式」後面：
+//   if (normalized.includes(normalize('支付寶123'))) { return '支付寶待確認'; }
+//   
+// ▶ 需要修改判斷的關鍵字：
+//   直接改下面的字串即可，例如：
+//   - 把 '匯款110' 改成 '匯款100' 或 '匯款'
+//   - 把 '貨付130' 改成 '貨付123' 或 '貨付'
+// ====================================================================
+function getItemPaymentStatus(itemText, rowPayText) {
+  const normalized = normalize(itemText);
+  // 待選擇付款方式：需同時包含兩個金額標籤
+  if (normalized.includes(normalize('匯款110')) && normalized.includes(normalize('貨付130'))) {
+    return '待選擇付款方式';
+  }
+  // 未付款：檢查「尚未」開頭的否定詞
+  if (normalized.includes(normalize('尚未匯款')) || normalized.includes(normalize('尚未無卡'))) {
+    return '未付款';
+  }
+  // 已付款：檢查明確的付款確認詞
+  if (normalized.includes(normalize('已匯款')) || normalized.includes(normalize('無卡')) || normalized.includes(normalize('匯款'))) {
+    return '已付款';
+  }
+  // 貨到付款：檢查貨付相關詞
+  if (normalized.includes(normalize('貨付'))) {
+    return '貨到付款';
+  }
+  // 未符合任何品項提示詞，改用該列原本的「付款方式」欄位值
+  return derivePaymentStatusFromRow(rowPayText);
+}
+
+// ====================================================================
+// 【出貨狀態判斷 - 品項級別】(優先度最高)
+// 根據品項文字中的提示詞判斷該品項的出貨/到貨狀態
+//
+// 判斷順序：
+//   1️⃣ 包含『已出貨』 → 已出貨
+//   2️⃣ 包含『尚未下單』 → 已到貨但尚未下單
+//   3️⃣ 包含『未到貨』 → 未到貨
+//   4️⃣ 都不符合 → 用該列「貨品狀態」欄位的值
+//
+// ▶ 如何新增判斷邏輯：
+//   - 新增條件在最前面（優先度更高）
+//   例如加在「已出貨」後面：
+//   if (normalized.includes(normalize('待簽收'))) { return '待簽收'; }
+//
+// ▶ 需要修改判斷的關鍵字：
+//   直接改下面的字串即可，例如：
+//   - 把 '已出貨' 改成 '已寄出'
+//   - 把 '未到貨' 改成 '未抵達'
+// ====================================================================
+function getItemShippingStatus(itemText, rowStatusText) {
+  const normalized = normalize(itemText);
+  // 已出貨
+  if (normalized.includes(normalize('已出貨'))) return '已出貨';
+  // 已到貨但尚未下單
+  if (normalized.includes(normalize('尚未下單'))) return '已到貨但尚未下單';
+  // 未到貨
+  if (normalized.includes(normalize('未到貨'))) return '未到貨';
+  // 都不符合，使用該列原本的「貨品狀態」欄位值
+  return rowStatusText || '';
+}
+
+// ====================================================================
+// 【整列付款狀態徽章】(顯示在顧客資訊面板右側)
+// 根據該列的整體付款情況判斷進度徽章
+// 
+// 判斷邏輯：
+//   - 付款方式包含「尚有未付款」或「尚未」 → ⏳ 待付款
+//   - 付款方式包含「貨」(貨到付款) → 📦 到貨付
+//   - 未付款金額 = 0 → ✓ 已結清
+//   - 其他情況(未付款金額 > 0) → ⚠️ 欠 X 元
+//
+// ▶ 修改方式：
+//   例如想新增一個「部分付款」狀態（欠款介於總額的20%-80%之間）：
+//   const total = parseMoney(getVal(row,'總金額','金額'));
+//   const ratio = unpaid / total;
+//   if (ratio > 0.2 && ratio < 0.8) return {cls:'dot-partial', label:'⚠️ 部分付款'};
+// ====================================================================
 function itemStatusBadge(row) {
   const way = getVal(row,'付款方式','付款');
   const unpaid = parseMoney(getVal(row,'尚有未付款金額','尚有未付款','尚未付款金額','尚未付款','未付款','未付'));
@@ -940,15 +1066,27 @@ function renderResults(rows) {
   if (itemLines.length) {
     html += `<div class="section-title">拆卡品項明細</div><div class="items-list">`;
     itemLines.forEach((line) => {
+      // 【品項渲染】清理品項文字（移除序號）並判斷付款與出貨狀態
       const clean = line.replace(/^\s*\d+[.\uff0e]\s*/,'').trim();
       if (!clean) return;
-      // 【拆卡明細→圖鑑連結】依品項文字比對出對應的 gallery.html 連結
+      
+      // 根據品項文字判斷該品項的付款狀態（優先級高於整列設定）
+      const payStatus = getItemPaymentStatus(clean, payWay);
+      
+      // 根據品項文字判斷該品項的出貨狀態（優先級高於整列設定）
+      const shipStatus = getItemShippingStatus(clean, status);
+      
+      // 組成狀態標籤陣列（HTML 片段）
+      const statusTags = [];
+      if (payStatus) statusTags.push(`<span class="item-tag item-pay">付款：${payStatus}</span>`);
+      if (shipStatus) statusTags.push(`<span class="item-tag item-ship">出貨：${shipStatus}</span>`);
       const galleryUrl = getGalleryLinkForItem(clean);
       html += `
         <div class="item-row clickable" onclick="location.href='${galleryUrl}'" title="點擊查看此品項的拆卡圖鑑">
           <div class="item-number">✨</div>
           <div class="item-desc">
             ${clean}
+            <div class="item-status">${statusTags.join('')}</div>
             <div class="item-confirm">已登記</div>
             <div class="item-link-hint">🖼️ 點擊查看拆卡圖鑑 →</div>
           </div>
