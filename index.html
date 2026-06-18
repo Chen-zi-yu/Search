@@ -128,6 +128,7 @@
   .suggest-item { padding:0.6rem 1.1rem; cursor:pointer; font-size:0.88rem; color:var(--text-dark); transition:background 0.15s; border-bottom:1px solid var(--rose-light); }
   .suggest-item:last-child { border-bottom:none; }
   .suggest-item:hover { background:var(--rose-light); }
+  .suggest-item.active { background:var(--rose-light); }
 
   /* 主內容區 */
   .main { max-width:900px; margin:0 auto; padding:2rem 1.5rem 4rem; }
@@ -554,6 +555,8 @@ let headers   = [];
 let rawLines  = [];
 let debugInfo = [];
 let searchTimeout = null;
+let currentSuggestions = [];
+let suggestIndex = -1; // -1 = none selected
 
 // ── 核心邏輯：字串正規化處理 ──
 function normalize(s) {
@@ -797,19 +800,36 @@ function showSuggestions(query) {
   const list = document.getElementById('suggestList');
   const matches = getMatches(query);
   const names = [...new Set(matches.map(r => getVal(r,'拆卡者','拆卡','名稱','name')))];
+  currentSuggestions = names.slice(0,8);
+  suggestIndex = -1;
   if (!names.length || (names.length===1 && normalize(names[0])===normalize(query))) {
     list.style.display='none'; return;
   }
   list.innerHTML = names.slice(0,8).map(n =>
-    `<div class="suggest-item" onclick="selectName(this.dataset.name)" data-name="${n.replace(/"/g,'&quot;')}">🌸 ${n}</div>`
+    `<div class="suggest-item" onclick="selectName(this.dataset.name)" data-name="${n.replace(/"/g,'&quot;')}" data-idx="${names.indexOf(n)}">🌸 ${n}</div>`
   ).join('');
   list.style.display='block';
+}
+
+function updateSuggestActive() {
+  const list = document.getElementById('suggestList');
+  const items = list.querySelectorAll('.suggest-item');
+  items.forEach((it, i) => {
+    if (i === suggestIndex) it.classList.add('active');
+    else it.classList.remove('active');
+  });
+  // ensure visible selection
+  const active = list.querySelector('.suggest-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
 }
 
 function selectName(name) {
   document.getElementById('searchInput').value = name;
   document.getElementById('suggestList').style.display='none';
   document.getElementById('clearBtn').style.display='block';
+  // reset suggestion navigation state
+  suggestIndex = -1;
+  currentSuggestions = [];
   renderResults(getMatches(name));
 }
 
@@ -957,7 +977,41 @@ document.getElementById('searchInput').addEventListener('input', function() {
   searchTimeout = setTimeout(() => search(this.value), 250);
 });
 document.getElementById('searchInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { document.getElementById('suggestList').style.display='none'; search(this.value); }
+  const list = document.getElementById('suggestList');
+  const visible = list && list.style.display !== 'none';
+  if (e.key === 'Enter') {
+    if (visible && suggestIndex >= 0 && currentSuggestions[suggestIndex]) {
+      e.preventDefault();
+      selectName(currentSuggestions[suggestIndex]);
+    } else {
+      list.style.display = 'none';
+      search(this.value);
+    }
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (visible) { list.style.display='none'; suggestIndex = -1; currentSuggestions = []; }
+    return;
+  }
+
+  // arrow navigation: down/right -> next, up/left -> prev
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+    if (visible && currentSuggestions.length) {
+      e.preventDefault();
+      suggestIndex = (suggestIndex + 1) % currentSuggestions.length;
+      updateSuggestActive();
+    }
+    return;
+  }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+    if (visible && currentSuggestions.length) {
+      e.preventDefault();
+      suggestIndex = (suggestIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+      updateSuggestActive();
+    }
+    return;
+  }
 });
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.search-box') && !e.target.closest('.suggest-list'))
