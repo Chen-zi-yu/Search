@@ -827,9 +827,6 @@ function selectName(name) {
   document.getElementById('searchInput').value = name;
   document.getElementById('suggestList').style.display='none';
   document.getElementById('clearBtn').style.display='block';
-  // reset suggestion navigation state
-  suggestIndex = -1;
-  currentSuggestions = [];
   renderResults(getMatches(name));
 }
 
@@ -866,7 +863,7 @@ function payClass(way) {
   if (way.includes('匯款')) return 'pay-匯款';
   if (way.includes('貨')) return 'pay-貨付';
   if (way.includes('無卡')) return 'pay-無卡';
-  if (way.includes('尚未')) return 'pay-尚未付款';
+  if (way.includes('尚有未付款') || way.includes('尚未')) return 'pay-尚有未付款';
   return '';
 }
 function payLabel(way) {
@@ -874,13 +871,14 @@ function payLabel(way) {
   if (way.includes('匯款')) return '💳 匯款';
   if (way.includes('貨')) return '📦 貨到付款';
   if (way.includes('無卡')) return '📱 無卡支付';
-  if (way.includes('尚未')) return '⏳ 尚未付款';
+  if (way.includes('尚有未付款') || way.includes('尚未')) return '⏳ 尚有未付款';
   return way;
 }
 
 function itemStatusBadge(row) {
   const way = getVal(row,'付款方式','付款');
-  const unpaid = parseMoney(getVal(row,'尚未付款','未付款','未付'));
+  const unpaid = parseMoney(getVal(row,'尚有未付款金額','尚有未付款','尚未付款金額','尚未付款','未付款','未付'));
+  if (way.includes('尚有未付款')) return {cls:'dot-pending', label:'⏳ 待付款'};
   if (way.includes('尚未')) return {cls:'dot-pending', label:'⏳ 待付款'};
   if (way.includes('貨')) return {cls:'dot-pending', label:'📦 到貨付'};
   if (unpaid === 0) return {cls:'dot-paid', label:'✓ 已結清'};
@@ -903,7 +901,7 @@ function renderResults(rows) {
   const payWay  = getVal(row,'付款方式','付款');
   const total   = parseMoney(getVal(row,'總金額','金額'));
   const paid    = parseMoney(getVal(row,'已經付款','已付款','已付'));
-  const unpaid  = parseMoney(getVal(row,'尚未付款','未付款','未付'));
+  const unpaid  = parseMoney(getVal(row,'尚有未付款金額','尚有未付款','尚未付款金額','尚未付款','未付款','未付'));
   const status  = getVal(row,'貨品狀態','狀態');
   const note    = getVal(row,'備註','note','remark');
   const rawItems= getVal(row,'卡面','成員','商品','品項','明細');
@@ -934,7 +932,7 @@ function renderResults(rows) {
         <div class="value">NT$${paid.toLocaleString()}</div>
       </div>
       <div class="summary-card unpaid">
-        <div class="label">尚未付款</div>
+        <div class="label">未付款金額</div>
         <div class="value">NT$${unpaid.toLocaleString()}</div>
       </div>
     </div>`;
@@ -1026,8 +1024,8 @@ function clearSearch() {
 
 // ── 測試用資料 (若 Sheet 無法讀取會顯示此範例) ──
 const DEMO_DATA = [
-  {'拆卡者':'Han Han','卡面/成員':'1. MS1.0 線上食譜留娜 匯款\n2. kms3留卡 + 一單封 匯款\n3. ms末場 留哈利波特+粒留DM 貨付','付款方式':'匯款','總金額':'NT$1,165','已經付款金額':'NT$540','尚未付款金額':'NT$625','貨品狀態':'貨尚未抵達','備註':''},
-  {'拆卡者':'李雨潔','卡面/成員':'1. MP1.0 粒留牙痛\n2. BDM 粒留貓爪+粒留比耶\n3. kms3.0 志粒留娜卡+單封','付款方式':'無卡','總金額':'NT$10,050','已經付款金額':'NT$10,000','尚未付款金額':'NT$50','貨品狀態':'貨尚未抵達','備註':''},
+  {'拆卡者':'Han Han','卡面/成員':'1. MS1.0 線上食譜留娜 匯款\n2. kms3留卡 + 一單封 匯款\n3. ms末場 留哈利波特+粒留DM 貨付','付款方式':'匯款','總金額':'NT$1,165','已經付款金額':'NT$540','尚有未付款金額':'NT$625','貨品狀態':'貨尚未抵達','備註':''},
+  {'拆卡者':'李雨潔','卡面/成員':'1. MP1.0 粒留牙痛\n2. BDM 粒留貓爪+粒留比耶\n3. kms3.0 志粒留娜卡+單封','付款方式':'無卡','總金額':'NT$10,050','已經付款金額':'NT$10,000','尚有未付款金額':'NT$50','貨品狀態':'貨尚未抵達','備註':''},
 ];
 
 // 頁面載入時執行
